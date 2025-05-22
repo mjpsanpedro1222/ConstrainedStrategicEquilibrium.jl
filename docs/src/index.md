@@ -1,0 +1,3 @@
+# ConstrainedStrategicEquilibrium.jl
+
+Docs to follow...

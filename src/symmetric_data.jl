@@ -36,24 +36,5 @@ function generate_cse_data(cse_problem::SymmetricCSEProblem)
         @info "mean and std player $j: $(player_means[j]), $(sqrt(player_stds[j]))"
     end
 
-    # combine stats for players 1 and 2 and players 3 and 4
-    #    mean1 = (player_means[1] + player_means[2]) / 2.0
-    #    mean2 = (player_means[3] + player_means[4]) / 2.0
-    #    std1 = 0.0
-    #    std2 = 0.0
-    #    for m = 1:cse_problem.mc
-    #        for j = 1:cse_problem.np
-    #            if j < 3
-    #                std1 += (u[m, j, 1] - mean1)^2
-    #            else
-    #                std2 += (u[m, j, 1] - mean2)^2
-    #            end
-    #        end
-    #    end
-    #    std1 /= (2.0 * cse_problem.mc)
-    #    std2 /= (2.0 * cse_problem.mc)
-    #    @info "1st 2 players mean and std: $(mean1), $(sqrt(std1))"
-    #    @info "2nd 2 players mean and std: $(mean2), $(sqrt(std2))"
-
     return u
 end

@@ -245,8 +245,8 @@ function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64}
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
     n = cse_problem.inin
-    firstiter = true
     solutions = Vector{SymmetricCSESolution}(undef, 0)
+    previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
 
@@ -255,44 +255,16 @@ function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64}
         prms = PolyParams(n, cse_problem.np, cse_problem.distribution, cse_problem.mc, u, knot, false, cse_solution, cse_problem.legacy_output)
 
         # solve the system
-        # TODO: setup the solver max iters etc the same? fortran values:
-        # - max iters = 500
-        # - max funevals = 1000
-        # - rel error between successive approximations  less than 1e-12
-        # - max num iterations 200
         x_n = @view x[begin:n]
-        prob = NonlinearProblem(objective_function_symmetric_jaepoly1, x_n, prms)
-        sol = solve(prob, NewtonRaphson())
-
-        # store some solver info with the solution
-        cse_solution.success = SciMLBase.successful_retcode(sol)
-
-        if !cse_solution.success
-            @error "Failed to solve CSE for n=$n => return code is: $(sol.retcode)"
-        end
-
-        # gather extra details about the solution
-        prms.cvrg = true
         fvec_n = @view fvec[begin:n]
-        objective_function_symmetric_jaepoly1(fvec_n, sol.u, prms)
+        sol = run_solver(cse_problem, cse_solution, objective_function_symmetric_jaepoly1, prms, x_n, fvec_n, previous_solution)
+
+        # set previous solution to latest ready for next step
+        previous_solution = cse_solution
 
         # store the solution for this value of n
         # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
-
-        # calculate stop criteria C_1 (compare with previous cse)
-        if firstiter
-            firstiter = false
-        else
-            csenew = solutions[end].cse."CSE(x)"
-            cseold = solutions[end-1].cse."CSE(x)"
-
-            diff = norm(csenew - cseold) / length(csenew)
-            solutions[end].c_1 = diff
-        end
-
-        # calculate stop criteria C_2 (norm of residual)
-        solutions[end].c_2 = norm(sol.resid)
 
         # log the solution
         # TODO: only if successful?

@@ -12,7 +12,7 @@ Contains the solution to the CSE problem.
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct SymmetricCSESolution
+@kwdef mutable struct SymmetricCSESolution <: CSESolution
     "A `DataFrame` containing the CSE and BNE evaluated at the given points"
     cse::DataFrame = DataFrame("x" => Float64[], "CSE(x)" => Float64[], "BNE(x)" => Float64[])
     "Mean squared error of the CSE compared to the BNE"

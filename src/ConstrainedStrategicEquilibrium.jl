@@ -18,6 +18,7 @@ include("utils.jl")
 include("base_types.jl")
 include("bne.jl")
 include("common_compute.jl")
+include("common_solve.jl")
 
 # include general symmetric case things
 include("symmetric_data.jl")

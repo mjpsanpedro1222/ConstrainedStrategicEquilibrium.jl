@@ -52,21 +52,3 @@ function Base.show(io::IO, obj::SymmetricCSESolution)
         print(io, @sprintf("SymmetricCSESolution(n=%02d, failed)", obj.n))
     end
 end
-
-
-"""
-$(TYPEDEF)
-
-Structure for passing data to the objective function via the solver interface.
-"""
-mutable struct SymmetricFunctionParams
-    n::Int64
-    np::Int64
-    dist::UnivariateDistribution
-    mc::Int64
-    u::Array{Float64,2}
-    knot::Vector{Float64}
-    cvrg::Bool
-    solution::SymmetricCSESolution
-    legacy_output::Bool
-end

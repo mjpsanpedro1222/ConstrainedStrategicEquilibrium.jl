@@ -85,7 +85,7 @@ $(TYPEDEF)
 
 Structure for passing data to the objective function via the solver interface.
 """
-mutable struct AsymmetricFunctionParams
+mutable struct AsymmetricFunctionParams <: CSESolverParams
     n::Int64
     np::Int64
     dists::Vector{UnivariateDistribution}

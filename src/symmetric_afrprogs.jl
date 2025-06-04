@@ -85,11 +85,29 @@ end
 
 
 """
+$(TYPEDEF)
+
+Structure for passing data to the objective function via the solver interface.
+"""
+mutable struct SymmetricAfrprogsParams <: CSESolverParams
+    n::Int64
+    np::Int64
+    dist::UnivariateDistribution
+    mc::Int64
+    u::Array{Float64,2}
+    knot::Vector{Float64}
+    cvrg::Bool
+    solution::SymmetricCSESolution
+    legacy_output::Bool
+end
+
+
+"""
 $(TYPEDSIGNATURES)
 
 Objective function for the symmetric afrprogs case.
 """
-function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricFunctionParams)
+function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsParams)
     # note: important to use similar here in case using autodiff they could be of type dual from ForwardDiff
     # TODO: preallocate for performance??
     da = similar(x)
@@ -288,7 +306,7 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
 
         # create Params object for passing extra info to the objective function
         cse_solution = SymmetricCSESolution(problem=cse_problem, n=n)
-        prms = SymmetricFunctionParams(n, cse_problem.np, cse_problem.distribution, cse_problem.mc, u, knot, false, cse_solution, cse_problem.legacy_output)
+        prms = SymmetricAfrprogsParams(n, cse_problem.np, cse_problem.distribution, cse_problem.mc, u, knot, false, cse_solution, cse_problem.legacy_output)
 
         # solve the system
         # TODO: setup the solver max iters etc the same? fortran values:

@@ -84,7 +84,7 @@ function validate_cse_problem(cse_problem::SymmetricJaePoly1CSEProblem)
 end
 
 
-mutable struct PolyParams
+mutable struct PolyParams <: CSESolverParams
     n::Int64
     np::Int64
     dist::UnivariateDistribution

@@ -27,8 +27,8 @@ println("Finished building examples")
 # organise pages
 
 example_pages = [
-    "AfrProgs Symmetric CSE" => "generated/afr-progs-sym.md",
-    "JaePoly1 Symmetric CSE" => "generated/jae-poly-1.md",
+    "Symmetric CSE - piecewise linear" => "generated/afr-progs-sym.md",
+    "Symmetric CSE - polynomial" => "generated/jae-poly-1.md",
 ]
 
 pages = [

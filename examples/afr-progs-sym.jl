@@ -1,6 +1,6 @@
-# # Symmetric CSE example
+# # Symmetric CSE example - piecewise linear form
 #
-# This is a simple example of how to run the symmetric CSE case.
+# This is a simple example of how to run the symmetric CSE case from afr_progs.
 #
 # ## Install dependencies
 #
@@ -34,11 +34,11 @@ solutions = compute_cse(cse_prob)
 # Select the final solution from the list
 sol = solutions[end]
 
-# Plot the final solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium.
+# Plot the final solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium and save the figure to a file.
 plot(sol, dpi=300)
-
-# We can also save the figure to a file
 savefig("afr_progs_sym.png")
+
+# View the plot showing the CSE and BNE: ![afr_progs_sym.png](afr_progs_sym.png)
 
 # ## Create a different problem and solve it
 #
@@ -54,3 +54,5 @@ solutions = compute_cse(cse_prob)
 
 plot(solutions[end], dpi=400)
 savefig("afr_progs_sym_n12.png")
+
+# View the plot showing the CSE and BNE: ![afr_progs_sym_n12.png](afr_progs_sym_n12.png)

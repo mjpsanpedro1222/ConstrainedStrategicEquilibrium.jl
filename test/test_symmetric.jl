@@ -1,5 +1,5 @@
 @testset verbose = true "Test symmetric compute with 2 n values" begin
-    cse_prob = SymmetricCSEProblem(inin=2, maxn=4)
+    cse_prob = SymmetricAfrprogsCSEProblem(inin=2, maxn=4)
     validate_cse_problem(cse_prob)
     solutions = compute_cse(cse_prob)
     @test length(solutions) == 2
@@ -19,12 +19,12 @@ end
 
 @testset verbose = true "Test validate symmetric problem" begin
     @testset verbose = true "Test validate default problem" begin
-        prob = SymmetricCSEProblem()
+        prob = SymmetricAfrprogsCSEProblem()
         @test validate_cse_problem(prob) === nothing
     end
 
     @testset verbose = true "Test validate bad distribution" begin
-        prob = SymmetricCSEProblem(distribution = Normal())
+        prob = SymmetricAfrprogsCSEProblem(distribution=Normal())
         @test_throws "Only Beta distributions are supported currently" validate_cse_problem(prob)
     end
 end

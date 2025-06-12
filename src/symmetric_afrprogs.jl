@@ -23,8 +23,8 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     rng::AbstractRNG = Random.seed!(642867)
     "Number of Monte Carlo steps (default is 10000)"
     mc::Int = 10000
-    "Number of players (default is 4)"
-    np::Int = 4
+    "Number of players (default is 2)"
+    np::Int = 2
     "Distribution to use (must be `Beta` currently; default is `Beta(3, 3)`)"
     distribution::UnivariateDistribution = Beta(3, 3)
     "Initial value for n (default is 2 and must be left as this currently)"

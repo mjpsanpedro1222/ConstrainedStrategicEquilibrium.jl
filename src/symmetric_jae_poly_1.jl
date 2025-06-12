@@ -23,8 +23,8 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     rng::AbstractRNG = Random.seed!(642867)
     "Number of Monte Carlo steps (default is 10000)"
     mc::Int = 10000
-    "Number of players (default is 2)"
-    np::Int = 2
+    "Number of players (default is 4)"
+    np::Int = 4
     "Distribution to use (must be `Kumaraswamy` currently; default is `Kumaraswamy(2.5, 3.5)`)"
     distribution::UnivariateDistribution = Kumaraswamy(2.5, 3.5)
     "Initial value for n (default is 1 and must be left as this currently)"

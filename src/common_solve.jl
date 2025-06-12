@@ -16,7 +16,6 @@ function run_solver(cse_problem::CSEProblem, cse_solution::CSESolution, objectiv
     if cse_problem.solver_reltol !== nothing
         kwargs = merge(kwargs, (; reltol=cse_problem.solver_reltol))
     end
-    println("kwargs: $(kwargs)")
 
     # solve the system
     # TODO: setup the solver max iters etc the same? fortran values:

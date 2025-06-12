@@ -42,6 +42,10 @@ $(TYPEDFIELDS)
     problem::SymmetricCSEProblem
     "The value of n used in this solution"
     n::Int
+    "The data used in generating the solution"
+    u::Array{Float64}
+    "The solution object returned by the solver"
+    solver_solution::Union{SciMLBase.NonlinearSolution,Nothing} = nothing
 end
 
 

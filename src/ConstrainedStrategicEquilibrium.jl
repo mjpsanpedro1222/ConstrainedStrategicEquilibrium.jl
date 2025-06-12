@@ -3,6 +3,7 @@ module ConstrainedStrategicEquilibrium
 using Random
 using Distributions
 using NonlinearSolve
+import NonlinearSolve.NonlinearSolveBase: AbstractNonlinearAlgorithm
 using SpecialFunctions
 using LinearAlgebra
 using QuadGK

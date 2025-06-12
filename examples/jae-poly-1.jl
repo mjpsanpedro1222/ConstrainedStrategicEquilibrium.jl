@@ -16,6 +16,7 @@
 
 using ConstrainedStrategicEquilibrium
 using Plots
+using NonlinearSolve
 
 # ## Create the symmetric CSE problem
 #
@@ -45,9 +46,10 @@ savefig("jae_poly_1.png")
 
 # ## Create a different problem and solve it
 #
-# Now create a non-default problem, e.g. by increasing the value of n and the number of players:
+# Now create a non-default problem, e.g. by increasing the value of n and the number of players and
+# selecting a different solver:
 
-cse_prob = SymmetricJaePoly1CSEProblem(np=6, maxn=8)
+cse_prob = SymmetricJaePoly1CSEProblem(np=6, maxn=8, solver=RobustMultiNewton())
 
 # Compute the CSE:
 

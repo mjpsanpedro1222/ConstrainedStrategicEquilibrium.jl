@@ -33,6 +33,14 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     maxn::Int = 16
     "Write txt and csv files with solution info"
     legacy_output::Bool = false
+    "The solver to use (default is to use the default set by NonlinearSolve.jl)"
+    solver::Union{AbstractNonlinearAlgorithm,Nothing} = nothing
+    "The maximum number of iterations for the solver (default is to use the default set by NonlinearSolve.jl)"
+    solver_maxiters::Union{Int,Nothing} = nothing
+    "The absolute tolerance passed to the solve function (default is to use the default set by NonlinearSolve.jl)"
+    solver_abstol::Union{Number,Nothing} = nothing
+    "The relative tolerance passed to the solve function (default is to use the default set by NonlinearSolve.jl)"
+    solver_reltol::Union{Number,Nothing} = nothing
 end
 
 
@@ -305,7 +313,7 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
         @debug "Loop: n = $n"
 
         # create Params object for passing extra info to the objective function
-        cse_solution = SymmetricCSESolution(problem=cse_problem, n=n)
+        cse_solution = SymmetricCSESolution(problem=cse_problem, n=n, u=u)
         prms = SymmetricAfrprogsParams(n, cse_problem.np, cse_problem.distribution, cse_problem.mc, u, knot, false, cse_solution, cse_problem.legacy_output)
 
         # solve the system

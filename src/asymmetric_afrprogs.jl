@@ -25,6 +25,14 @@ $(TYPEDFIELDS)
     maxn::Int = 17
     "Write txt and csv files with solution info"
     legacy_output::Bool = false
+    "The solver to use (default is to use FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff()))"
+    solver::Union{AbstractNonlinearAlgorithm,Nothing} = FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff())
+    "The maximum number of iterations for the solver (default is to use the default set by NonlinearSolve.jl)"
+    solver_maxiters::Union{Int,Nothing} = nothing
+    "The absolute tolerance passed to the solve function (default is to use the default set by NonlinearSolve.jl)"
+    solver_abstol::Union{Number,Nothing} = nothing
+    "The relative tolerance passed to the solve function (default is to use the default set by NonlinearSolve.jl)"
+    solver_reltol::Union{Number,Nothing} = nothing
 end
 
 

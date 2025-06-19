@@ -36,6 +36,7 @@ include("symmetric_jae_poly_1.jl")
 include("asymmetric_types.jl")
 include("asymmetric_data.jl")
 include("asymmetric_afrprogs.jl")
+include("asymmetric_plot.jl")
 
 # define exports
 export SymmetricAfrprogsCSEProblem, validate_cse_problem, compute_cse, generate_cse_data

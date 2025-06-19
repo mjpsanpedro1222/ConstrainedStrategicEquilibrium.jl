@@ -78,8 +78,11 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
         throw("Only 4 players are supported currently")
     end
 
-    if cse_problem.inin != 16
-        throw("Initial value of n must be 16 currently")
+    #if cse_problem.inin != 16
+    #    throw("Initial value of n must be 16 currently")
+    #end
+    if cse_problem.inin != cse_problem.maxn
+        throw("initial value of n must be same as max value currently")
     end
 
     if cse_problem.inin > cse_problem.maxn
@@ -126,62 +129,76 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
     alph = zeros(Float64, 2, cse_problem.maxn + 1)
     bet = zeros(Float64, 2, cse_problem.maxn + 1)
 
+    # initial values
+    n = cse_problem.inin
+    robo = 15
+
     # parameters initialisation
     # TODO: these should be moved to problem, or guessed/set automatically somehow
-    x[1] = -2.84827109173688
-    x[2] = -2.85209052797506
-    x[3] = -2.85688597597939
-    x[4] = -2.86243170560486
-    x[5] = -2.87005433886236
-    x[6] = -2.87972857171734
-    x[7] = -2.89195095174828
-    x[8] = -2.90986034638539
-    x[9] = -2.93411212816428
-    x[10] = -2.96990679761558
-    x[11] = -3.03212449908756
-    x[12] = -3.14051739544213
-    x[13] = -3.33100693581025
-    x[14] = -3.69184084490141
-    x[15] = -5.61683383184477
-    x[16] = -7.41860036191254
-    x[17] = 4.37486841314759
-    x[18] = 3.55315379806175
-    x[19] = 3.09860286531008
-    x[20] = 2.74440338704673
-    x[21] = 2.45415125926837
-    x[22] = 2.19413505997764
-    x[23] = 1.94448901027584
-    x[24] = 1.71125414593309
-    x[25] = 1.47745377147087
-    x[26] = 1.23478257742541
-    x[27] = 1.01951187118377
-    x[28] = 0.846654741348483
-    x[29] = 0.726435662568677
-    x[30] = 0.619443991395723
-    x[31] = 1.12697386952317
+    #x[1] = -2.84827109173688
+    #x[2] = -2.85209052797506
+    #x[3] = -2.85688597597939
+    #x[4] = -2.86243170560486
+    #x[5] = -2.87005433886236
+    #x[6] = -2.87972857171734
+    #x[7] = -2.89195095174828
+    #x[8] = -2.90986034638539
+    #x[9] = -2.93411212816428
+    #x[10] = -2.96990679761558
+    #x[11] = -3.03212449908756
+    #x[12] = -3.14051739544213
+    #x[13] = -3.33100693581025
+    #x[14] = -3.69184084490141
+    #x[15] = -5.61683383184477
+    #x[16] = -7.41860036191254
+    #x[17] = 4.37486841314759
+    #x[18] = 3.55315379806175
+    #x[19] = 3.09860286531008
+    #x[20] = 2.74440338704673
+    #x[21] = 2.45415125926837
+    #x[22] = 2.19413505997764
+    #x[23] = 1.94448901027584
+    #x[24] = 1.71125414593309
+    #x[25] = 1.47745377147087
+    #x[26] = 1.23478257742541
+    #x[27] = 1.01951187118377
+    #x[28] = 0.846654741348483
+    #x[29] = 0.726435662568677
+    #x[30] = 0.619443991395723
+    #x[31] = 1.12697386952317
+    tmparr = 1.0 * randn(2 * n - 1)
+    for i in 1:2*n-1
+        x[i] = tmparr[i]
+    end
+    @debug "initial guess:" x
 
-    knot[:, 1] .= 0.000000000000000E+000
-    knot[:, 2] .= 6.250000000000000E-002
-    knot[:, 3] .= 0.125000000000000
-    knot[:, 4] .= 0.187500000000000
-    knot[:, 5] .= 0.250000000000000
-    knot[:, 6] .= 0.312500000000000
-    knot[:, 7] .= 0.375000000000000
-    knot[:, 8] .= 0.437500000000000
-    knot[:, 9] .= 0.500000000000000
-    knot[:, 10] .= 0.562500000000000
-    knot[:, 11] .= 0.625000000000000
-    knot[:, 12] .= 0.687500000000000
-    knot[:, 13] .= 0.750000000000000
-    knot[:, 14] .= 0.812500000000000
-    knot[:, 15] .= 0.875000000000000
-    knot[:, 16] .= 0.937500000000000
-    knot[:, 17] .= 1.00000000000000
+    #knot[:, 1] .= 0.000000000000000E+000
+    #knot[:, 2] .= 6.250000000000000E-002
+    #knot[:, 3] .= 0.125000000000000
+    #knot[:, 4] .= 0.187500000000000
+    #knot[:, 5] .= 0.250000000000000
+    #knot[:, 6] .= 0.312500000000000
+    #knot[:, 7] .= 0.375000000000000
+    #knot[:, 8] .= 0.437500000000000
+    #knot[:, 9] .= 0.500000000000000
+    #knot[:, 10] .= 0.562500000000000
+    #knot[:, 11] .= 0.625000000000000
+    #knot[:, 12] .= 0.687500000000000
+    #knot[:, 13] .= 0.750000000000000
+    #knot[:, 14] .= 0.812500000000000
+    #knot[:, 15] .= 0.875000000000000
+    #knot[:, 16] .= 0.937500000000000
+    #knot[:, 17] .= 1.00000000000000
+    tmparr = collect(range(0, stop=1, length=n + 1))
+    for i in 1:n+1
+        knot[:, i] .= tmparr[i]
+    end
+    #knot[1, 1:n] .= collect(range(0, stop=1, length=n))
+    #knot[2, 1:n] .= knot[1, :]
+    @debug "knot: $(knot[1, :])"
 
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
-    n = cse_problem.inin
-    robo = 15
     firstiter = true
     solutions = Vector{AsymmetricCSESolution}(undef, 0)
     while n <= cse_problem.maxn
@@ -199,10 +216,12 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         # - max num iterations 200
         x_n = @view x[begin:2*n-1]
         prob = NonlinearProblem(objective_function_asymmetric_afrprogs, x_n, prms)
-        sol = solve(prob, FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff()))
+        #sol = solve(prob, FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff()))
         #sol = solve(prob, NewtonRaphson(; autodiff=AutoFiniteDiff()))
         #sol = solve(prob, FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDifferences()))
         #sol = solve(prob)
+        #sol = solve(prob, RobustMultiNewton(; autodiff=AutoFiniteDiff()); show_trace=Val(true), trace_level=TraceMinimal(), abstol=1e-4, reltol=1e-4)
+        sol = solve(prob, RobustMultiNewton(; autodiff=AutoFiniteDiff()); show_trace=Val(true), trace_level=TraceMinimal(), abstol=1e-3, reltol=1e-4)
 
         # store some solver info with the solution
         cse_solution.success = SciMLBase.successful_retcode(sol)

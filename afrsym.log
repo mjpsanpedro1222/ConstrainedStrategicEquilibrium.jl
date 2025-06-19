@@ -1,0 +1,24 @@
+[ Info: mean and std player 1: 0.49633951552007977, 0.18885050939620612
+[ Info: mean and std player 2: 0.5007305133575601, 0.1892652700849154
+[ Info: mean and std player 3: 0.4972455831729586, 0.1878159004651643
+[ Info: mean and std player 4: 0.5027573361316219, 0.1872836320651174
+[ Info: Computing: SymmetricCSEProblem(np=4, mc=10000, n=2..16, Beta(α=3.0, β=3.0))
+[ Info: SymmetricCSESolution(n=02, MSE=2.02e-04, C_1=NaN, C_2=3.72e-14)
+[ Info: SymmetricCSESolution(n=04, MSE=5.47e-05, C_1=9.95e-04, C_2=3.87e-17)
+[ Info: SymmetricCSESolution(n=06, MSE=1.26e-05, C_1=5.35e-04, C_2=6.13e-17)
+[ Info: SymmetricCSESolution(n=08, MSE=9.89e-06, C_1=1.52e-04, C_2=6.47e-17)
+[ Info: SymmetricCSESolution(n=10, MSE=1.10e-05, C_1=5.32e-05, C_2=5.27e-17)
+[ Info: SymmetricCSESolution(n=12, MSE=4.06e-06, C_1=1.58e-04, C_2=2.54e-16)
+[ Info: SymmetricCSESolution(n=14, MSE=4.42e-06, C_1=2.79e-05, C_2=1.08e-14)
+[ Info: SymmetricCSESolution(n=16, MSE=4.23e-06, C_1=3.82e-05, C_2=6.32e-14)
+[ Info: mean and std player 1: 0.4130634994917249, 0.18584956828712212
+[ Info: mean and std player 2: 0.4174291134914526, 0.18673568992991535
+[ Info: mean and std player 3: 0.4138216621632709, 0.1847310851565667
+[ Info: mean and std player 4: 0.4192060120406184, 0.18484679403674714
+[ Info: Computing: SymmetricCSEProblem(np=4, mc=10000, n=2..12, Beta(α=2.5, β=3.5))
+[ Info: SymmetricCSESolution(n=02, MSE=3.10e-04, C_1=NaN, C_2=4.30e-15)
+[ Info: SymmetricCSESolution(n=04, MSE=4.42e-05, C_1=1.43e-03, C_2=1.98e-17)
+[ Info: SymmetricCSESolution(n=06, MSE=1.93e-05, C_1=4.44e-04, C_2=3.72e-17)
+[ Info: SymmetricCSESolution(n=08, MSE=2.26e-05, C_1=1.01e-04, C_2=2.82e-13)
+[ Info: SymmetricCSESolution(n=10, MSE=9.10e-06, C_1=2.11e-04, C_2=1.26e-15)
+[ Info: SymmetricCSESolution(n=12, MSE=8.55e-06, C_1=5.23e-05, C_2=2.62e-17)

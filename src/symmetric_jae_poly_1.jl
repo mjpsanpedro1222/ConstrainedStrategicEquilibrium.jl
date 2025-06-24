@@ -35,12 +35,8 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     legacy_output::Bool = false
     "The solver to use (default is to use the default set by NonlinearSolve.jl)"
     solver::Union{AbstractNonlinearAlgorithm,Nothing} = nothing
-    "The maximum number of iterations for the solver (default is to use the default set by NonlinearSolve.jl)"
-    solver_maxiters::Union{Int,Nothing} = nothing
-    "The absolute tolerance passed to the solve function (default is to use the default set by NonlinearSolve.jl)"
-    solver_abstol::Union{Number,Nothing} = nothing
-    "The relative tolerance passed to the solve function (default is to use the default set by NonlinearSolve.jl)"
-    solver_reltol::Union{Number,Nothing} = nothing
+    "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
+    solver_kwargs::NamedTuple = (;)
 end
 
 

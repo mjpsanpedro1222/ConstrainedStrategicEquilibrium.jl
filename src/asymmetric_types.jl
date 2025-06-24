@@ -13,7 +13,7 @@ Contains the solution to the asymmetric CSE problem.
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct AsymmetricCSESolution
+@kwdef mutable struct AsymmetricCSESolution <: CSESolution
     "A `DataFrame` containing the CSE and BNE evaluated at the given points"
     cse::DataFrame = DataFrame("x" => Float64[], "CSE(x) group 1" => Float64[], "CSE(x) group 2" => Float64[])
     "Norm of the derivatives"
@@ -41,6 +41,10 @@ $(TYPEDFIELDS)
     problem::AsymmetricCSEProblem
     "The value of n used in this solution"
     n::Int
+    "The data used in generating the solution"
+    u::Array{Float64}
+    "The solution object returned by the solver"
+    solver_solution::Union{SciMLBase.NonlinearSolution,Nothing} = nothing
 end
 
 

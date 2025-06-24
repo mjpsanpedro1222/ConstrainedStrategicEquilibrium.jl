@@ -26,13 +26,9 @@ $(TYPEDFIELDS)
     "Write txt and csv files with solution info"
     legacy_output::Bool = false
     "The solver to use (default is to use FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff()))"
-    solver::Union{AbstractNonlinearAlgorithm,Nothing} = FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff())
-    "The maximum number of iterations for the solver (default is to use the default set by NonlinearSolve.jl)"
-    solver_maxiters::Union{Int,Nothing} = nothing
-    "The absolute tolerance passed to the solve function (default is to use the default set by NonlinearSolve.jl)"
-    solver_abstol::Union{Number,Nothing} = nothing
-    "The relative tolerance passed to the solve function (default is to use the default set by NonlinearSolve.jl)"
-    solver_reltol::Union{Number,Nothing} = nothing
+    solver::Union{AbstractNonlinearAlgorithm,Nothing} = RobustMultiNewton(; autodiff=AutoFiniteDiff())
+    "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
+    solver_kwargs::NamedTuple = (show_trace=Val(true), trace_level=TraceMinimal(), abstol=1e-4)
 end
 
 
@@ -199,55 +195,33 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
 
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
-    firstiter = true
     solutions = Vector{AsymmetricCSESolution}(undef, 0)
+    previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
 
         # create Params object for passing extra info to the objective function
-        cse_solution = AsymmetricCSESolution(problem=cse_problem, n=n)
+        cse_solution = AsymmetricCSESolution(problem=cse_problem, n=n, u=u)
         prms = AsymmetricFunctionParams(n, cse_problem.np, cse_problem.distributions, cse_problem.mc, u, knot, false, cse_solution, cse_problem.legacy_output)
 
         # solve the system
-        # TODO: setup the solver max iters etc the same? fortran values:
-        # - max iters = 500
-        # - max funevals = 1000
-        # - rel error between successive approximations  less than 1e-12
-        # - max num iterations 200
         x_n = @view x[begin:2*n-1]
-        prob = NonlinearProblem(objective_function_asymmetric_afrprogs, x_n, prms)
+        fvec_n = @view fvec[begin:2*n-1]
+        #        prob = NonlinearProblem(objective_function_asymmetric_afrprogs, x_n, prms)
         #sol = solve(prob, FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff()))
         #sol = solve(prob, NewtonRaphson(; autodiff=AutoFiniteDiff()))
         #sol = solve(prob, FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDifferences()))
         #sol = solve(prob)
         #sol = solve(prob, RobustMultiNewton(; autodiff=AutoFiniteDiff()); show_trace=Val(true), trace_level=TraceMinimal(), abstol=1e-4, reltol=1e-4)
-        sol = solve(prob, RobustMultiNewton(; autodiff=AutoFiniteDiff()); show_trace=Val(true), trace_level=TraceMinimal(), abstol=1e-3, reltol=1e-4)
+        #        sol = solve(prob, RobustMultiNewton(; autodiff=AutoFiniteDiff()); show_trace=Val(true), trace_level=TraceMinimal(), abstol=1e-3, reltol=1e-4)
+        sol = run_solver(cse_problem, cse_solution, objective_function_asymmetric_afrprogs, prms, x_n, fvec_n, previous_solution)
 
-        # store some solver info with the solution
-        cse_solution.success = SciMLBase.successful_retcode(sol)
-
-        # gather extra details about the solution
-        prms.cvrg = true
-        fvec_n = @view fvec[begin:2*n-1]
-        objective_function_asymmetric_afrprogs(fvec_n, sol.u, prms)
+        # set previous solution for next step
+        previous_solution = cse_solution
 
         # store the solution for this value of n
+        # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
-
-        # calculate stop criteria C_1 (compare with previous cse)
-        if firstiter
-            firstiter = false
-        else
-            # TODO: just for group 1 currently, add for all players eventually?
-            csenew = solutions[end].cse."CSE(x) group 1"
-            cseold = solutions[end-1].cse."CSE(x) group 1"
-
-            diff = norm(csenew - cseold) / length(csenew)
-            solutions[end].c_1 = diff
-        end
-
-        # calculate stop criteria C_2 (norm of residual)
-        solutions[end].c_2 = norm(sol.resid)
 
         # log the solution
         @info cse_solution

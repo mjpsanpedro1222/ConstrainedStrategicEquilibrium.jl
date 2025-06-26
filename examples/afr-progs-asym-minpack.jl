@@ -23,12 +23,17 @@ using MINPACK, NonlinearSolve
 #
 # Create the default symmetric CSE problem with the following:
 
+initial_n = 6
+guess = Vector{Float64}(undef, 2*initial_n-1)
+guess[begin:initial_n] .= 2.0 + rand()
+guess[initial_n+1:end] .= -2.0 - rand()
+
 cse_prob = AsymmetricAfrprogsCSEProblem(
-    inin=6,
-    maxn=6,
-    solver=CMINPACK(; method=:hybrd),
-    #solver=CMINPACK(),
+    inin=initial_n,
+    maxn=initial_n,
+    #solver=CMINPACK(; method=:hybrd),
     solver_kwargs=(; show_trace=Val(true), abstol=1e-4, reltol=1e-4),
+    solver_initial_guess=guess,
 )
 
 # ## Compute the CSE

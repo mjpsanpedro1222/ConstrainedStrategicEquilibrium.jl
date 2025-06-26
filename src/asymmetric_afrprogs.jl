@@ -29,6 +29,8 @@ $(TYPEDFIELDS)
     solver::Union{AbstractNonlinearAlgorithm,Nothing} = RobustMultiNewton(; autodiff=AutoFiniteDiff())
     "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
     solver_kwargs::NamedTuple = (show_trace=Val(true), trace_level=TraceMinimal(), abstol=1e-4)
+    "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `2 * inin - 1)"
+    solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
 end
 
 
@@ -84,6 +86,13 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
     if cse_problem.inin > cse_problem.maxn
         throw("Initial value of n cannot be bigger than maximum value of n")
     end
+
+    if cse_problem.solver_initial_guess !== nothing
+        expected_length = 2 * cse_problem.inin - 1
+        if length(cse_problem.solver_initial_guess) != expected_length
+            throw("Solver initial guess must have length $(expected_length) (actual length: $(length(cse_problem.inin)))")
+        end
+    end
 end
 
 
@@ -130,7 +139,7 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
     robo = 15
 
     # parameters initialisation
-    # TODO: these should be moved to problem, or guessed/set automatically somehow
+    # these were the values provided in the fortran code for n=16
     #    x[1] = -2.84827109173688
     #    x[2] = -2.85209052797506
     #    x[3] = -2.85688597597939
@@ -163,44 +172,23 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
     #    x[30] = 0.619443991395723
     #    x[31] = 1.12697386952317
 
-    #    tmparr = 1.0 * randn(2 * n - 1)
-    #    for i in 1:2*n-1
-    #        x[i] = tmparr[i]
-    #    end
-
-    tmparr = rand(2 * n - 1)
-    for i in 1:2*n-1
-        if i <= n
-            x[i] = 2.0 + tmparr[i]
-        else
-            x[i] = -2.0 - tmparr[i]
-        end
+    if cse_problem.solver_initial_guess !== nothing && length(cse_problem.solver_initial_guess) == 2 * n - 1
+        @debug "Using passed solver initial guess"
+        x[begin:2*n-1] .= cse_problem.solver_initial_guess
+    elseif cse_problem.solver_initial_guess !== nothing && length(cse_problem.solver_initial_guess) != 2 * n - 1
+        @warn "Ignoring passed solver initial guess as it is the wrong length"
+    else
+        # default values
+        @debug "Using default initial guess"
+        x[begin:n] .= 2.0 .+ rand(n)
+        x[n+1:2*n-1] .= -2.0 .- rand(n - 1)
     end
     @debug "initial guess:" x
 
-    #knot[:, 1] .= 0.000000000000000E+000
-    #knot[:, 2] .= 6.250000000000000E-002
-    #knot[:, 3] .= 0.125000000000000
-    #knot[:, 4] .= 0.187500000000000
-    #knot[:, 5] .= 0.250000000000000
-    #knot[:, 6] .= 0.312500000000000
-    #knot[:, 7] .= 0.375000000000000
-    #knot[:, 8] .= 0.437500000000000
-    #knot[:, 9] .= 0.500000000000000
-    #knot[:, 10] .= 0.562500000000000
-    #knot[:, 11] .= 0.625000000000000
-    #knot[:, 12] .= 0.687500000000000
-    #knot[:, 13] .= 0.750000000000000
-    #knot[:, 14] .= 0.812500000000000
-    #knot[:, 15] .= 0.875000000000000
-    #knot[:, 16] .= 0.937500000000000
-    #knot[:, 17] .= 1.00000000000000
+    # define the knot array
     tmparr = collect(range(0, stop=1, length=n + 1))
-    for i in 1:n+1
-        knot[:, i] .= tmparr[i]
-    end
-    #knot[1, 1:n] .= collect(range(0, stop=1, length=n))
-    #knot[2, 1:n] .= knot[1, :]
+    knot[1, begin:n+1] .= tmparr
+    knot[2, begin:n+1] .= tmparr
     @debug "knot 1: $(knot[1, :])"
     @debug "knot 2: $(knot[2, :])"
 

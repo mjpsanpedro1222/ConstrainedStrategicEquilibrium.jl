@@ -26,7 +26,7 @@ $(TYPEDFIELDS)
     "Write txt and csv files with solution info"
     legacy_output::Bool = false
     "The solver to use (default is to use FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff()))"
-    solver::Union{AbstractNonlinearAlgorithm,Nothing} = FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff())
+    solver::Union{AbstractNonlinearAlgorithm,Nothing} = Broyden(; init_jacobian=Val(:true_jacobian), autodiff=AutoFiniteDiff())
     "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
     solver_kwargs::NamedTuple = (;)
     "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `2 * inin - 1)"
@@ -76,12 +76,12 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
         throw("Only 4 players are supported currently")
     end
 
-    #if cse_problem.inin != 16
-    #    throw("Initial value of n must be 16 currently")
-    #end
-    if cse_problem.inin != cse_problem.maxn
-        throw("initial value of n must be same as max value currently")
+    if cse_problem.inin != 16
+        throw("Initial value of n must be 16 currently")
     end
+    #if cse_problem.inin != cse_problem.maxn
+    #    throw("initial value of n must be same as max value currently")
+    #end
 
     if cse_problem.inin > cse_problem.maxn
         throw("Initial value of n cannot be bigger than maximum value of n")

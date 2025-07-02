@@ -26,9 +26,9 @@ $(TYPEDFIELDS)
     "Write txt and csv files with solution info"
     legacy_output::Bool = false
     "The solver to use (default is to use FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff()))"
-    solver::Union{AbstractNonlinearAlgorithm,Nothing} = RobustMultiNewton(; autodiff=AutoFiniteDiff())
+    solver::Union{AbstractNonlinearAlgorithm,Nothing} = FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff())
     "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
-    solver_kwargs::NamedTuple = (show_trace=Val(true), trace_level=TraceMinimal(), abstol=1e-4)
+    solver_kwargs::NamedTuple = (;)
     "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `2 * inin - 1)"
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
 end

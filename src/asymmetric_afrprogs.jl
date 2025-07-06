@@ -19,17 +19,17 @@ $(TYPEDFIELDS)
     np::Int = 4
     "Distributions to use, which should be a Vector of length `np` (each distribution must be `Beta` currently)"
     distributions::Vector{UnivariateDistribution} = [Beta(3, 3), Beta(3, 3), Beta(5, 3), Beta(5, 3)]
-    "Initial value for n (default is 16 and must be left as this currently)"
+    "Initial value for `n` (default is 16 and must be left as this currently)"
     inin::Int = 16
-    "Maximum value for n (default is 17)"
+    "Maximum value for `n` (default is 17)"
     maxn::Int = 17
-    "Write txt and csv files with solution info"
+    "Write txt and csv files with solution info (default is False, most of this info is included in the solution objects that get return from `compute_cse`)"
     legacy_output::Bool = false
-    "The solver to use (default is to use FastShortcutNonlinearPolyalg(; autodiff=AutoFiniteDiff()))"
+    "The solver to use (default is to use `Broyden(; init_jacobian=Val(:true_jacobian), autodiff=AutoFiniteDiff())`)"
     solver::Union{AbstractNonlinearAlgorithm,Nothing} = Broyden(; init_jacobian=Val(:true_jacobian), autodiff=AutoFiniteDiff())
-    "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
+    "Keyword arguments to pass to the solve command, such as `abstol`, `reltol`, `maxiters`, etc. Add `show_trace=Val(true)` to output extra info from the solver."
     solver_kwargs::NamedTuple = (;)
-    "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `2 * inin - 1)"
+    "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `2 * inin - 1`)"
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
 end
 

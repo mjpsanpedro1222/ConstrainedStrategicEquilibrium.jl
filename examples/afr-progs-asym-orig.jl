@@ -61,11 +61,10 @@ xguess[31] = 1.12697386952317
 # Create an asymmetric CSE problem with the following:
 cse_prob = AsymmetricAfrprogsCSEProblem(
     inin=nval,
-    maxn=nval+1,
+    maxn=nval + 1,
     np=4,
     mc=10000,
-    solver=Broyden(; init_jacobian=Val(:true_jacobian), autodiff=AutoFiniteDiff()),
-    solver_kwargs=(; show_trace=Val(true), trace_level=TraceMinimal()),
+    solver_kwargs=(; show_trace=Val(true)),
     solver_initial_guess=xguess,
 )
 
@@ -83,4 +82,4 @@ sol = solutions[end]
 plot(sol, dpi=300)
 
 # We can also save the figure to a file
-savefig("afr_progs_asym.png")
+savefig("afr-progs-asym.png")

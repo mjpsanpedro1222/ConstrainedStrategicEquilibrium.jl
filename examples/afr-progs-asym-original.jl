@@ -1,6 +1,6 @@
-# # Symmetric CSE example
+# # ASymmetric CSE example from afrprogs
 #
-# This is a simple example of how to run the symmetric CSE case.
+# This example is doing roughly the same thing as the asym.f example code from afrprogs.
 #
 # ## Install dependencies
 #
@@ -19,7 +19,7 @@ using Plots
 using Distributions
 using NonlinearSolve
 
-# ## Create the symmetric CSE problem
+# ## Create the CSE problem
 #
 # The original fortran asym code used n=16 and the following initial guess:
 
@@ -58,7 +58,8 @@ xguess[30] = 0.619443991395723
 xguess[31] = 1.12697386952317
 
 #
-# Create an asymmetric CSE problem with the following:
+# Create an asymmetric CSE problem with the following (not we make a small change
+# from the Fortran asym.f code by running from n=16 to n=17, instead of just n=16):
 cse_prob = AsymmetricAfrprogsCSEProblem(
     inin=nval,
     maxn=nval + 1,
@@ -75,11 +76,10 @@ solutions = compute_cse(cse_prob)
 
 # ## Postprocessing
 #
-# Select the final solution from the list
-sol = solutions[end]
+# Loop over the solutions and plot them all:
+for sol in solutions
+    plot(sol, dpi=300)
 
-# Plot the final solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium.
-plot(sol, dpi=300)
-
-# We can also save the figure to a file
-savefig("afr-progs-asym.png")
+    # We can also save the figure to a file (comment this line out if you don't want to)
+    savefig("afr-progs-asym-n$(sol.n).png")
+end

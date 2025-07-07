@@ -140,7 +140,6 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
 
     # initial values
     n = cse_problem.inin
-    robo = 15
 
     # parameters initialisation
     if cse_problem.solver_initial_guess !== nothing && length(cse_problem.solver_initial_guess) == 2 * n - 1
@@ -210,16 +209,21 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         alph[2, n] = yknot[2, n]
         bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (knot[2, n+1] - knot[2, n])
 
+        # find interval with largest change in yknot to split for next iteration
+        diffs1 = yknot[1, 2:n+1] - yknot[1, 1:n]
+        diffs2 = yknot[2, 2:n+1] - yknot[2, 1:n]
+        diffs = abs.(diffs1) + abs.(diffs2)
+        ~, split_idx = findmax(diffs)
+
         n += 1
         if n <= cse_problem.maxn
             oldknot .= knot
-            knot[1, n+1-robo] = (knot[1, n-robo] + knot[1, n+1-robo]) / 2.0
-            knot[2, n+1-robo] = knot[1, n+1-robo]
-            for l in (n+2-robo):(n+1)
-                knot[1, l] = oldknot[1, l-1]
-                knot[2, l] = knot[1, l]
-            end
-            robo += 2
+
+            # insert new knot point by splitting the interval with the largest change
+            new_knot_val = (oldknot[1, split_idx] + oldknot[1, split_idx+1]) / 2.0
+            knot[1, split_idx+1] = new_knot_val
+            knot[1, split_idx+2:n+1] .= oldknot[1, split_idx+1:n]
+            knot[2, 1:n+1] .= knot[1, 1:n+1]
 
             yknot[1, 1] = 0.0
             yknot[2, 1] = 0.0

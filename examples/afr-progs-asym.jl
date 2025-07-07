@@ -22,7 +22,7 @@ using Distributions
 #
 # Create the default symmetric CSE problem with the following:
 
-cse_prob = AsymmetricAfrprogsCSEProblem(inin=6, maxn=6)
+cse_prob = AsymmetricAfrprogsCSEProblem(inin=16, maxn=16)
 
 # ## Compute the CSE
 #

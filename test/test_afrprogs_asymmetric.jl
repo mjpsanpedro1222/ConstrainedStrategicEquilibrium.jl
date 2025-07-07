@@ -1,3 +1,42 @@
+@testset verbose = true "Test validate afrprogs asymmetric problem" begin
+    @testset verbose = true "Test validate default problem" begin
+        prob = AsymmetricAfrprogsCSEProblem()
+        @test validate_cse_problem(prob) === nothing
+    end
+
+    @testset verbose = true "Test validate bad distribution" begin
+        prob = AsymmetricAfrprogsCSEProblem(np=2, distributions=[Normal(), Beta()])
+        @test_throws "Only Beta distributions are supported currently" validate_cse_problem(prob)
+
+        prob = AsymmetricAfrprogsCSEProblem(np=2, distributions=[Normal(), Normal()])
+        @test_throws "Only Beta distributions are supported currently" validate_cse_problem(prob)
+
+        prob = AsymmetricAfrprogsCSEProblem(np=2, distributions=[Beta(), Beta()])
+        @test validate_cse_problem(prob) === nothing
+    end
+
+    @testset verbose = true "Test validate 4 player distributions" begin
+        prob = AsymmetricAfrprogsCSEProblem(np=4, distributions=[Beta(), Beta(), Beta(), Beta()])
+        @test validate_cse_problem(prob) === nothing
+
+        prob = AsymmetricAfrprogsCSEProblem(np=4, distributions=[Beta(2, 2), Beta(2, 2), Beta(3, 3), Beta(3, 3)])
+        @test validate_cse_problem(prob) === nothing
+
+        prob = AsymmetricAfrprogsCSEProblem(np=4, distributions=[Beta(2, 2), Beta(2, 3), Beta(3, 3), Beta(3, 3)])
+        @test_throws "Bidders 1 and 2 must have the same distribution and the same goes for bidders 3 and 4" validate_cse_problem(prob)
+
+        prob = AsymmetricAfrprogsCSEProblem(np=4, distributions=[Beta(2, 2), Beta(2, 2), Beta(3, 3), Beta(3, 4)])
+        @test_throws "Bidders 1 and 2 must have the same distribution and the same goes for bidders 3 and 4" validate_cse_problem(prob)
+
+        prob = AsymmetricAfrprogsCSEProblem(np=4, distributions=[Beta(3, 3), Beta(4, 4)])
+        @test validate_cse_problem(prob) === nothing
+        @test prob.distributions[1] == Beta(3, 3)
+        @test prob.distributions[2] == Beta(3, 3)
+        @test prob.distributions[3] == Beta(4, 4)
+        @test prob.distributions[4] == Beta(4, 4)
+    end
+end
+
 @testset verbose = true "Test afrprogs asymmetric reference run" begin
     # The original fortran asym code used n=16 and the following initial guess:
     nval = 16
@@ -39,7 +78,10 @@
         inin=nval,
         maxn=nval,
         solver_initial_guess=xguess,
+        np=4,
     )
+
+    validate_cse_problem(cse_prob)
 
     # Now compute the CSE for the problem we created
     solutions = compute_cse(cse_prob)

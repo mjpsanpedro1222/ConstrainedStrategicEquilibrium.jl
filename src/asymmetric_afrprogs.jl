@@ -23,6 +23,8 @@ $(TYPEDFIELDS)
     inin::Int = 16
     "Maximum value for `n` (default is 17)"
     maxn::Int = 17
+    "Knot refinement strategy. Can be `:steepest_slope` or `:highest_curvature`. (default is `:steepest_slope`)"
+    knot_refinement_strategy::Symbol = :steepest_slope
     "Write txt and csv files with solution info (default is False, most of this info is included in the solution objects that get return from `compute_cse`)"
     legacy_output::Bool = false
     "The solver to use (default is to use `Broyden(; init_jacobian=Val(:true_jacobian), autodiff=AutoFiniteDiff())`)"
@@ -91,6 +93,10 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
 
     if cse_problem.inin > cse_problem.maxn
         throw("Initial value of n cannot be bigger than maximum value of n")
+    end
+
+    if cse_problem.knot_refinement_strategy ∉ [:steepest_slope, :highest_curvature]
+        throw("`knot_refinement_strategy` must be one of `:steepest_slope` or `:highest_curvature`")
     end
 
     if cse_problem.solver_initial_guess !== nothing
@@ -209,9 +215,33 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         alph[2, n] = yknot[2, n]
         bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (knot[2, n+1] - knot[2, n])
 
-        # find interval with largest derivative (steepest slope) to split for next iteration
-        slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
-        ~, split_idx = findmax(slopes)
+        # find interval to split for next iteration
+        split_idx = -1
+        if cse_problem.knot_refinement_strategy == :steepest_slope
+            # split interval with largest derivative (steepest slope)
+            slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+            ~, split_idx = findmax(slopes)
+        elseif cse_problem.knot_refinement_strategy == :highest_curvature
+            # split interval with largest change in derivative (highest curvature)
+            if n > 1
+                bet_diff1 = abs.(bet[1, 2:n] - bet[1, 1:n-1])
+                bet_diff2 = abs.(bet[2, 2:n] - bet[2, 1:n-1])
+                total_diffs = bet_diff1 + bet_diff2
+                ~, idx = findmax(total_diffs)
+
+                # between the two intervals that make the corner, pick the one with the steeper slope
+                slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+                if slopes[idx] >= slopes[idx+1]
+                    split_idx = idx
+                else
+                    split_idx = idx + 1
+                end
+            else
+                # cannot compute curvature with one interval, fallback to steepest slope
+                slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+                ~, split_idx = findmax(slopes)
+            end
+        end
 
         n += 1
         if n <= cse_problem.maxn

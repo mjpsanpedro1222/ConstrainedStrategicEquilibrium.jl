@@ -69,6 +69,9 @@ cse_prob = AsymmetricAfrprogsCSEProblem(
     solver_initial_guess=xguess,
 )
 
+# Now validate the problem we just created (this will throw an error if there is a mistake):
+validate_cse_problem(cse_prob)
+
 # ## Compute the CSE
 #
 # Now compute the CSE for the problem we created

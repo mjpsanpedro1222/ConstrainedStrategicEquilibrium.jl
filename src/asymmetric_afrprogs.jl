@@ -194,57 +194,56 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         # log the solution
         @info cse_solution
 
-        # TODO: this needs to be generalised
-        # update the parameters before moving to a CSE with a higher k
-        yknot[1, 1] = 0.0
-        yknot[2, 1] = 0.0
-        for l in 1:n-1
-            yknot[1, l+1] = yknot[1, l] + exp(sol.u[l])
-            alph[1, l] = yknot[1, l]
-            bet[1, l] = (yknot[1, l+1] - yknot[1, l]) / (knot[1, l+1] - knot[1, l])
-            aux = exp(sol.u[n+l])
-            aux = aux / (1 + aux)
-            yknot[2, l+1] = yknot[2, l] + (yknot[1, l+1] - yknot[2, l]) * aux
-            alph[2, l] = yknot[2, l]
-            bet[2, l] = (yknot[2, l+1] - yknot[2, l]) / (knot[2, l+1] - knot[2, l])
-        end
-        yknot[1, n+1] = yknot[1, n] + exp(sol.u[n])
-        alph[1, n] = yknot[1, n]
-        bet[1, n] = (yknot[1, n+1] - yknot[1, n]) / (knot[1, n+1] - knot[1, n])
-        yknot[2, n+1] = yknot[1, n+1]
-        alph[2, n] = yknot[2, n]
-        bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (knot[2, n+1] - knot[2, n])
+        if n + 1 <= cse_problem.maxn
+            # update the parameters before moving to a CSE with a higher k
+            yknot[1, 1] = 0.0
+            yknot[2, 1] = 0.0
+            for l in 1:n-1
+                yknot[1, l+1] = yknot[1, l] + exp(sol.u[l])
+                alph[1, l] = yknot[1, l]
+                bet[1, l] = (yknot[1, l+1] - yknot[1, l]) / (knot[1, l+1] - knot[1, l])
+                aux = exp(sol.u[n+l])
+                aux = aux / (1 + aux)
+                yknot[2, l+1] = yknot[2, l] + (yknot[1, l+1] - yknot[2, l]) * aux
+                alph[2, l] = yknot[2, l]
+                bet[2, l] = (yknot[2, l+1] - yknot[2, l]) / (knot[2, l+1] - knot[2, l])
+            end
+            yknot[1, n+1] = yknot[1, n] + exp(sol.u[n])
+            alph[1, n] = yknot[1, n]
+            bet[1, n] = (yknot[1, n+1] - yknot[1, n]) / (knot[1, n+1] - knot[1, n])
+            yknot[2, n+1] = yknot[1, n+1]
+            alph[2, n] = yknot[2, n]
+            bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (knot[2, n+1] - knot[2, n])
 
-        # find interval to split for next iteration
-        split_idx = -1
-        if cse_problem.knot_refinement_strategy == :steepest_slope
-            # split interval with largest derivative (steepest slope)
-            slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
-            ~, split_idx = findmax(slopes)
-        elseif cse_problem.knot_refinement_strategy == :highest_curvature
-            # split interval with largest change in derivative (highest curvature)
-            if n > 1
-                bet_diff1 = abs.(bet[1, 2:n] - bet[1, 1:n-1])
-                bet_diff2 = abs.(bet[2, 2:n] - bet[2, 1:n-1])
-                total_diffs = bet_diff1 + bet_diff2
-                ~, idx = findmax(total_diffs)
-
-                # between the two intervals that make the corner, pick the one with the steeper slope
-                slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
-                if slopes[idx] >= slopes[idx+1]
-                    split_idx = idx
-                else
-                    split_idx = idx + 1
-                end
-            else
-                # cannot compute curvature with one interval, fallback to steepest slope
+            # find interval to split for next iteration
+            split_idx = -1
+            if cse_problem.knot_refinement_strategy == :steepest_slope
+                # split interval with largest derivative (steepest slope)
                 slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
                 ~, split_idx = findmax(slopes)
-            end
-        end
+            elseif cse_problem.knot_refinement_strategy == :highest_curvature
+                # split interval with largest change in derivative (highest curvature)
+                if n > 1
+                    bet_diff1 = abs.(bet[1, 2:n] - bet[1, 1:n-1])
+                    bet_diff2 = abs.(bet[2, 2:n] - bet[2, 1:n-1])
+                    total_diffs = bet_diff1 + bet_diff2
+                    ~, idx = findmax(total_diffs)
 
-        n += 1
-        if n <= cse_problem.maxn
+                    # between the two intervals that make the corner, pick the one with the steeper slope
+                    slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+                    if slopes[idx] >= slopes[idx+1]
+                        split_idx = idx
+                    else
+                        split_idx = idx + 1
+                    end
+                else
+                    # cannot compute curvature with one interval, fallback to steepest slope
+                    slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+                    ~, split_idx = findmax(slopes)
+                end
+            end
+
+            n += 1
             oldknot .= knot
 
             # insert new knot point by splitting the interval with the largest change
@@ -278,6 +277,8 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
                 aux = (yknot[2, l+1] - yknot[2, l]) / (yknot[1, l+1] - yknot[2, l])
                 x[n+l] = log(aux / (1.0 - aux))
             end
+        else
+            n += 1
         end
     end
 

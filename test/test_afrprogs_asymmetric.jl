@@ -96,7 +96,7 @@ end
     lines = readlines(refdata_path)
     data = [parse.(Float64, split(replace(line, 'D' => 'E'))) for line in lines]
     array_data = reduce(vcat, [reshape(row, 1, :) for row in data])
-    cse_ref = DataFrame(array_data, ["x", "CSE(x) group 1", "CSE(x) group 2"])
+    cse_ref = DataFrame(array_data, ["x", "CSE(x) 1", "CSE(x) 2"])
 
     # compare generated CSE to reference data
     rtol = 1e-6
@@ -105,7 +105,7 @@ end
     if size(cse) != size(cse_ref)
         @error "CSE dataframes have different sizes."
     end
-    for col in ("x", "CSE(x) group 1", "CSE(x) group 2")
+    for col in ("x", "CSE(x) 1", "CSE(x) 2")
         is_close = isapprox.(cse[!, col], cse_ref[!, col]; atol=atol, rtol=rtol)
         @test all(is_close)
         if !all(is_close)

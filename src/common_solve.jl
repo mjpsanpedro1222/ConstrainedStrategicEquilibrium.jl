@@ -28,8 +28,8 @@ function run_solver(cse_problem::CSEProblem, cse_solution::CSESolution, objectiv
                 cse_solution.c_1 = diff
             elseif isa(cse_solution, AsymmetricCSEProblem)
                 # TODO: just for group 1 currently, add for all players eventually?
-                csenew = cse_solution.cse."CSE(x) group 1"
-                cseold = previous_solution.cse."CSE(x) group 1"
+                csenew = cse_solution.cse."CSE(x) 1"
+                cseold = previous_solution.cse."CSE(x) 1"
 
                 diff = norm(csenew - cseold) / length(csenew)
                 cse_solution.c_1 = diff

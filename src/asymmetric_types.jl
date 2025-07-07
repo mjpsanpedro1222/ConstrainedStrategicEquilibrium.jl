@@ -15,7 +15,7 @@ $(TYPEDFIELDS)
 """
 @kwdef mutable struct AsymmetricCSESolution <: CSESolution
     "A `DataFrame` containing the CSE and BNE evaluated at the given points"
-    cse::DataFrame = DataFrame("x" => Float64[], "CSE(x) group 1" => Float64[], "CSE(x) group 2" => Float64[])
+    cse::DataFrame = DataFrame("x" => Float64[], "CSE(x) 1" => Float64[], "CSE(x) 2" => Float64[])
     "Norm of the derivatives"
     resid::Float64 = NaN
     #    knot::DataFrame = DataFrame("l" => Int[], "knot(l-1)" => Float64[], "knot(l)" => Float64[], "CSE[knot(l)]" => Float64[])

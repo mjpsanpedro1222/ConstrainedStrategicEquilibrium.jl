@@ -251,6 +251,7 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
             new_knot_val = (oldknot[1, split_idx] + oldknot[1, split_idx+1]) / 2.0
             knot[1, split_idx+1] = new_knot_val
             knot[1, split_idx+2:n+1] .= oldknot[1, split_idx+1:n]
+            # NOTE: there are assumptions elsewhere in the code about the knot points being the same for both players
             knot[2, 1:n+1] .= knot[1, 1:n+1]
             @debug "new knot 1: $(knot[1, :])"
             @debug "new knot 2: $(knot[2, :])"

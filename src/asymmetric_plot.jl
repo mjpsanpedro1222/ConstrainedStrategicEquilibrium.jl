@@ -14,22 +14,26 @@
     title --> "CSE for n=$(sol.n), np=$(sol.problem.np), mc=$(sol.problem.mc), asymmetric case\n$(diststring)\n$(ftr)"
 
     @series begin
+        seriescolor := 1
         label := "CSE 1"
         sol.cse."x", sol.cse."CSE(x) 1"
     end
 
     @series begin
+        seriescolor := 1
         seriestype := :scatter
         label := "Knots 1"
         [sol.knot[:bidder1]."knot(l-1)"[1]; sol.knot[:bidder1]."knot(l)"], [0.0; sol.knot[:bidder1]."CSE[knot(l)]"]
     end
 
     @series begin
+        seriescolor := 2
         label := "CSE 2"
         sol.cse."x", sol.cse."CSE(x) 2"
     end
 
     @series begin
+        seriescolor := 2
         seriestype := :scatter
         label := "Knots 2"
         [sol.knot[:bidder2]."knot(l-1)"[1]; sol.knot[:bidder2]."knot(l)"], [0.0; sol.knot[:bidder2]."CSE[knot(l)]"]

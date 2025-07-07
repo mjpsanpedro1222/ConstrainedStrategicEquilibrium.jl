@@ -209,11 +209,9 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         alph[2, n] = yknot[2, n]
         bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (knot[2, n+1] - knot[2, n])
 
-        # find interval with largest change in yknot to split for next iteration
-        diffs1 = yknot[1, 2:n+1] - yknot[1, 1:n]
-        diffs2 = yknot[2, 2:n+1] - yknot[2, 1:n]
-        diffs = abs.(diffs1) + abs.(diffs2)
-        ~, split_idx = findmax(diffs)
+        # find interval with largest derivative (steepest slope) to split for next iteration
+        slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+        ~, split_idx = findmax(slopes)
 
         n += 1
         if n <= cse_problem.maxn

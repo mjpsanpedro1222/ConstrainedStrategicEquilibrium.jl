@@ -504,53 +504,84 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
         if p.legacy_output
             write(fout, "\n")
             close(fcsv)
-        end
 
-        # TODO: store these on the solution too
-        if p.legacy_output
             write(fout, "PLAYERS 1 and 2\n")
             write(fout, "  l    knot(1,l-1)    knot(1,l)    CSE[knot(1,l)]\n")
-            for l = 1:p.n-1
+        end
+        for l = 1:p.n-1
+            push!(p.solution.knot[:bidder1], (l, p.knot[1, l], p.knot[1, l+1], alph[1, l+1]))
+            if p.legacy_output
                 write(fout, "$(l*1.0) $(p.knot[1, l]) $(p.knot[1, l+1]) $(alph[1, l+1])\n")
             end
+        end
+        push!(p.solution.knot[:bidder1], (p.n, p.knot[1, p.n], p.knot[1, p.n+1], alph[1, p.n] + bet[1, p.n] * (1 - p.knot[1, p.n])))
+        if p.legacy_output
             write(fout, "$(p.n*1.0) $(p.knot[1, p.n]) $(p.knot[1, p.n+1]) $(alph[1, p.n] + bet[1, p.n] * (1-p.knot[1, p.n]))\n")
             write(fout, "\n")
 
             write(fout, "  l    alph(1,l)    bet(1,l)\n")
-            for l = 1:p.n
+        end
+        for l = 1:p.n
+            push!(p.solution.alph_bet[:bidder1], (l, alph[1, l], bet[1, l]))
+            if p.legacy_output
                 write(fout, "$(l*1.0) $(alph[1, l]) $(bet[1, l])\n")
             end
+        end
+        if p.legacy_output
             write(fout, "\n")
 
-            erre = 0.0
             write(fout, "  l    x(l)    f(l)\n")
-            for l = 1:p.n
+        end
+        erre = 0.0
+        for l = 1:p.n
+            push!(p.solution.x_f[:bidder1], (l, x[l], fvec[l]))
+            if p.legacy_output
                 write(fout, "$(l*1.0) $(x[l]) $(fvec[l])\n")
-                erre += fvec[l]^2
             end
+            erre += fvec[l]^2
+        end
+        p.solution.norm_derivatives[:bidder1] = sqrt(erre)
+        if p.legacy_output
             write(fout, "Norm of derivatives: $(sqrt(erre))\n")
 
             write(fout, "\n\n")
             write(fout, "PLAYERS 3 and 4\n")
             write(fout, "  l    knot(2,l-1)    knot(2,l)    CSE[knot(2,l)]\n")
-            for l = 1:p.n-1
+        end
+        for l = 1:p.n-1
+            push!(p.solution.knot[:bidder2], (l, p.knot[2, l], p.knot[2, l+1], alph[2, l+1]))
+            if p.legacy_output
                 write(fout, "$(l*1.0) $(p.knot[2, l]) $(p.knot[2, l+1]) $(alph[2, l+1])\n")
             end
+        end
+        push!(p.solution.knot[:bidder2], (p.n, p.knot[2, p.n], p.knot[2, p.n+1], alph[2, p.n] + bet[2, p.n] * (1 - p.knot[2, p.n])))
+        if p.legacy_output
             write(fout, "$(p.n*1.0) $(p.knot[2, p.n]) $(p.knot[2, p.n+1]) $(alph[2, p.n] + bet[2, p.n] * (1-p.knot[2, p.n]))\n")
             write(fout, "\n")
 
             write(fout, "  l    alph(2,l)    bet(2,l)\n")
-            for l = 1:p.n
+        end
+        for l = 1:p.n
+            push!(p.solution.alph_bet[:bidder2], (l, alph[2, l], bet[2, l]))
+            if p.legacy_output
                 write(fout, "$(l*1.0) $(alph[2, l]) $(bet[2, l])\n")
             end
+        end
+        if p.legacy_output
             write(fout, "\n")
 
-            erre = 0.0
             write(fout, "  l    x(l)    f(l)\n")
-            for l = 1:p.n-1
+        end
+        erre = 0.0
+        for l = 1:p.n-1
+            push!(p.solution.x_f[:bidder2], (l, x[p.n+l], fvec[p.n+l]))
+            if p.legacy_output
                 write(fout, "$(l*1.0) $(x[p.n+l]) $(fvec[p.n+l])\n")
-                erre += fvec[p.n+l]^2
             end
+            erre += fvec[p.n+l]^2
+        end
+        p.solution.norm_derivatives[:bidder2] = sqrt(erre)
+        if p.legacy_output
             write(fout, "Norm of derivatives: $(sqrt(erre))\n")
 
             close(fout)

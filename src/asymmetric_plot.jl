@@ -2,19 +2,10 @@
 @recipe function f(sol::AsymmetricCSESolution)
     xlabel --> "Private-Values"
     ylabel --> "Bids"
-    label := "CSE P1"
-    #    c1_string = isnan(sol.c_1) ? "" : @sprintf("; C_1=%.2e", sol.c_1)
-    #    ftr = @sprintf("MSE=%.2e%s; C_2=%.2e", sol.mse, c1_string, sol.c_2)
-    #    titlefontsize --> 10
-    #    title --> "CSE and BNE for n=$(sol.n), symmetric case, $(simplify_distribution_string(repr(sol.problem.distribution)))\n$(ftr)"
-
-    #    @series begin
-    #        label := "BNE"
-    #        sol.cse."x", sol.cse."BNE(x)"
-    #    end
+    label := "CSE 1"
 
     @series begin
-        label := "CSE P2"
+        label := "CSE 2"
         sol.cse."x", sol.cse."CSE(x) 2"
     end
 

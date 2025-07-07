@@ -26,13 +26,18 @@ function run_solver(cse_problem::CSEProblem, cse_solution::CSESolution, objectiv
 
                 diff = norm(csenew - cseold) / length(csenew)
                 cse_solution.c_1 = diff
-            elseif isa(cse_solution, AsymmetricCSEProblem)
-                # TODO: just for group 1 currently, add for all players eventually?
+            elseif isa(cse_solution, AsymmetricCSESolution)
+                # player 1
                 csenew = cse_solution.cse."CSE(x) 1"
                 cseold = previous_solution.cse."CSE(x) 1"
-
                 diff = norm(csenew - cseold) / length(csenew)
-                cse_solution.c_1 = diff
+                cse_solution.c_1[:bidder1] = diff
+
+                # player 2
+                csenew = cse_solution.cse."CSE(x) 2"
+                cseold = previous_solution.cse."CSE(x) 2"
+                diff = norm(csenew - cseold) / length(csenew)
+                cse_solution.c_1[:bidder2] = diff
             else
                 @warn "C_1 not implemented for $(typeof(cse_solution))"
             end

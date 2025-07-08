@@ -1,5 +1,12 @@
 
-function compute_cse(cse_problem::SymmetricCSEProblem)
+"""
+$(TYPEDSIGNATURES)
+
+Compute the given CSE problem.
+
+This function will validate the problem, generate the data and the comute the CSE.
+"""
+function compute_cse(cse_problem::CSEProblem)
     # validate the problem
     validate_cse_problem(cse_problem)
 

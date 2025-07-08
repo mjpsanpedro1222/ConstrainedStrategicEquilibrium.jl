@@ -33,6 +33,10 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     maxn::Int = 5
     "Write txt and csv files with solution info (default is false)"
     legacy_output::Bool = false
+    "The solver to use (default is to use the default set by NonlinearSolve.jl)"
+    solver::Union{AbstractNonlinearAlgorithm,Nothing} = nothing
+    "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
+    solver_kwargs::NamedTuple = (;)
 end
 
 
@@ -84,7 +88,7 @@ function validate_cse_problem(cse_problem::SymmetricJaePoly1CSEProblem)
 end
 
 
-mutable struct PolyParams
+mutable struct PolyParams <: CSESolverParams
     n::Int64
     np::Int64
     dist::UnivariateDistribution
@@ -245,54 +249,26 @@ function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64}
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
     n = cse_problem.inin
-    firstiter = true
     solutions = Vector{SymmetricCSESolution}(undef, 0)
+    previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
 
         # create Params object for passing extra info to the objective function
-        cse_solution = SymmetricCSESolution(problem=cse_problem, n=n)
+        cse_solution = SymmetricCSESolution(problem=cse_problem, n=n, u=u)
         prms = PolyParams(n, cse_problem.np, cse_problem.distribution, cse_problem.mc, u, knot, false, cse_solution, cse_problem.legacy_output)
 
         # solve the system
-        # TODO: setup the solver max iters etc the same? fortran values:
-        # - max iters = 500
-        # - max funevals = 1000
-        # - rel error between successive approximations  less than 1e-12
-        # - max num iterations 200
         x_n = @view x[begin:n]
-        prob = NonlinearProblem(objective_function_symmetric_jaepoly1, x_n, prms)
-        sol = solve(prob, NewtonRaphson())
-
-        # store some solver info with the solution
-        cse_solution.success = SciMLBase.successful_retcode(sol)
-
-        if !cse_solution.success
-            @error "Failed to solve CSE for n=$n => return code is: $(sol.retcode)"
-        end
-
-        # gather extra details about the solution
-        prms.cvrg = true
         fvec_n = @view fvec[begin:n]
-        objective_function_symmetric_jaepoly1(fvec_n, sol.u, prms)
+        sol = run_solver(cse_problem, cse_solution, objective_function_symmetric_jaepoly1, prms, x_n, fvec_n, previous_solution)
+
+        # set previous solution to latest ready for next step
+        previous_solution = cse_solution
 
         # store the solution for this value of n
         # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
-
-        # calculate stop criteria C_1 (compare with previous cse)
-        if firstiter
-            firstiter = false
-        else
-            csenew = solutions[end].cse."CSE(x)"
-            cseold = solutions[end-1].cse."CSE(x)"
-
-            diff = norm(csenew - cseold) / length(csenew)
-            solutions[end].c_1 = diff
-        end
-
-        # calculate stop criteria C_2 (norm of residual)
-        solutions[end].c_2 = norm(sol.resid)
 
         # log the solution
         # TODO: only if successful?

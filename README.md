@@ -70,4 +70,13 @@ julia --project=docs docs/make.jl
 
 Open *docs/build/index.html*.
 
+## Enable debug logging
+
+We use the Logging package to print info. To enable debug messages you could
+export this environment variable before running julia:
+
+```
+export JULIA_DEBUG=ConstrainedStrategicEquilibrium
+```
+
 ## More to come...

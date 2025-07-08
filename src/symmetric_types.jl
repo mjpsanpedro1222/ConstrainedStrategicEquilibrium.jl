@@ -12,7 +12,7 @@ Contains the solution to the CSE problem.
 
 $(TYPEDFIELDS)
 """
-@kwdef mutable struct SymmetricCSESolution
+@kwdef mutable struct SymmetricCSESolution <: CSESolution
     "A `DataFrame` containing the CSE and BNE evaluated at the given points"
     cse::DataFrame = DataFrame("x" => Float64[], "CSE(x)" => Float64[], "BNE(x)" => Float64[])
     "Mean squared error of the CSE compared to the BNE"
@@ -42,6 +42,10 @@ $(TYPEDFIELDS)
     problem::SymmetricCSEProblem
     "The value of n used in this solution"
     n::Int
+    "The data used in generating the solution"
+    u::Array{Float64}
+    "The solution object returned by the solver"
+    solver_solution::Union{SciMLBase.NonlinearSolution,Nothing} = nothing
 end
 
 
@@ -51,22 +55,4 @@ function Base.show(io::IO, obj::SymmetricCSESolution)
     else
         print(io, @sprintf("SymmetricCSESolution(n=%02d, failed)", obj.n))
     end
-end
-
-
-"""
-$(TYPEDEF)
-
-Structure for passing data to the objective function via the solver interface.
-"""
-mutable struct SymmetricFunctionParams
-    n::Int64
-    np::Int64
-    dist::UnivariateDistribution
-    mc::Int64
-    u::Array{Float64,2}
-    knot::Vector{Float64}
-    cvrg::Bool
-    solution::SymmetricCSESolution
-    legacy_output::Bool
 end

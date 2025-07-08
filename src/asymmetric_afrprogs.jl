@@ -61,8 +61,8 @@ ERROR: "Initial value of n cannot be bigger than maximum value of n"
 ```
 """
 function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
-    if !all(x -> x isa Distributions.Beta, cse_problem.distributions)
-        throw("Only Beta distributions are supported currently")
+    if !all(x -> isa(x, Distributions.Beta) || isa(x, Distributions.Uniform), cse_problem.distributions)
+        throw("Only Beta or Uniform distributions are supported currently")
     end
 
     if length(cse_problem.distributions) != cse_problem.np
@@ -309,13 +309,10 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
     # NOTE : in the 4 player case, we assume players 1 and 2 have the same distribution and
     #        players 3 and 4 have the same distribution so we just consider player 1 vs player 3
     dist1 = p.dists[1]
-    dist1params = params(dist1)
     if p.np == 2
         dist2 = p.dists[2]
-        dist2params = params(dist2)
     else
         dist2 = p.dists[3]
-        dist2params = params(dist2)
     end
 
     # set up the value of the constrained strategy parameters such that the
@@ -342,9 +339,6 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
     alph[2, n] = yknot[2, n]
     bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (p.knot[2, n+1] - p.knot[2, n])
 
-    const1 = beta(dist1params...)
-    const2 = beta(dist2params...)
-
 
     for m = 1:p.mc
 
@@ -369,7 +363,7 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 check = false
 
                 cumu1 = cdf(dist1, ti)
-                dcumu1 = (ti^(dist1params[1] - 1)) * ((1 - ti)^(dist1params[2] - 1)) / const1
+                dcumu1 = pdf(dist1, ti)
             end
         end
 
@@ -387,7 +381,7 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 check = false
 
                 cumu2 = cdf(dist2, invbi)
-                dcumu2 = (invbi^(dist2params[1] - 1)) * ((1 - invbi)^(dist2params[2] - 1)) / const2
+                dcumu2 = pdf(dist2, invbi)
             end
         end
 
@@ -417,7 +411,7 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 check = false
 
                 cumu1 = cdf(dist2, ti)
-                dcumu1 = (ti^(dist2params[1] - 1)) * ((1 - ti)^(dist2params[2] - 1)) / const2
+                dcumu1 = pdf(dist2, ti)
             end
         end
 
@@ -432,7 +426,7 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 check = false
 
                 cumu2 = cdf(dist1, invbi)
-                dcumu2 = (invbi^(dist1params[1] - 1)) * ((1 - invbi)^(dist1params[2] - 1)) / const1
+                dcumu2 = pdf(dist1, invbi)
             end
         end
 

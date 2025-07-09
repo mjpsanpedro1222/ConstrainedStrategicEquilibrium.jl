@@ -301,9 +301,13 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
 
     # note: important to use similar here in case using autodiff they could be of type dual from ForwardDiff
     da = similar(x, length(x) + 2)
+    da .= 0
     yknot = similar(x, 2, n + 2)
+    yknot .= 0
     alph = similar(yknot)
+    alph .= 0
     bet = similar(yknot)
+    bet .= 0
 
     # distribution
     # NOTE : in the 4 player case, we assume players 1 and 2 have the same distribution and
@@ -339,6 +343,10 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
     alph[2, n] = yknot[2, n]
     bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (p.knot[2, n+1] - p.knot[2, n])
 
+    if any(isnan, yknot)
+        @error "NaNs in yknot at:" findall(isnan, yknot) x
+        throw("NaNs in yknot")
+    end
 
     for m = 1:p.mc
 
@@ -366,6 +374,10 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 dcumu1 = pdf(dist1, ti)
             end
         end
+        if cumu1 === missing
+            @error "Failed to find interval for ti in FOC 1" ti p.knot
+            throw("Failed to find interval for ti in FOC 1")
+        end
 
         cumu2 = missing
         dcumu2 = missing
@@ -383,6 +395,10 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 cumu2 = cdf(dist2, invbi)
                 dcumu2 = pdf(dist2, invbi)
             end
+        end
+        if cumu2 === missing
+            @error "Failed to find interval for bi in FOC 1" bi yknot
+            throw("Failed to find interval for bi in FOC 1")
         end
 
         cumu = cumu1 * cumu2^2
@@ -414,10 +430,15 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 dcumu1 = pdf(dist2, ti)
             end
         end
+        if bi === missing
+            @error "Failed to find interval for ti in FOC 2" ti p.knot
+            throw("Failed to find interval for ti in FOC 2")
+        end
 
         check = true
         ll = 0
         invbi = 1.0
+        cumu2 = missing
         while check && ll < n
             ll += 1
             if bi >= yknot[1, ll] && bi <= yknot[1, ll+1] && ll <= n
@@ -428,6 +449,10 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 cumu2 = cdf(dist1, invbi)
                 dcumu2 = pdf(dist1, invbi)
             end
+        end
+        if cumu2 === missing
+            @error "Failed to find interval for bi in FOC 2" bi yknot
+            throw("Failed to find interval for bi in FOC 2")
         end
 
         cumu = cumu1 * cumu2^2

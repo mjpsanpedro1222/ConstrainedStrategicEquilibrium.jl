@@ -194,6 +194,12 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         # log the solution
         @info cse_solution
 
+        # break the loop if failed
+        if !cse_solution.success
+            @error "Exiting compute_cse due to solve failed"
+            break
+        end
+
         if n + 1 <= cse_problem.maxn
             # update the parameters before moving to a CSE with a higher k
             yknot[1, 1] = 0.0

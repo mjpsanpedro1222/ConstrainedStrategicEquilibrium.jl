@@ -17,7 +17,7 @@ $(TYPEDFIELDS)
     mc::Int = 10000
     "Number of players (must be 2 or 4 currently)"
     np::Int = 2
-    "Distributions to use, which should be a Vector of length `np` (each distribution must be `Beta` currently)"
+    "Distributions to use, which should be a Vector of length `np` (valid distributions are Beta and Uniform currently)"
     distributions::Vector{UnivariateDistribution} = [Beta(3, 3), Beta(5, 3)]
     "Initial value for `n` (default is 16)"
     inin::Int = 16

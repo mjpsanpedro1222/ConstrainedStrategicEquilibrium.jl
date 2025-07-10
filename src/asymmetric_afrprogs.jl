@@ -23,7 +23,7 @@ $(TYPEDFIELDS)
     inin::Int = 16
     "Maximum value for `n` (default is 17)"
     maxn::Int = 17
-    "Knot refinement strategy. Can be `:steepest_slope` or `:highest_curvature`. (default is `:steepest_slope`)"
+    "Knot refinement strategy. Can be `:steepest_slope`, `:highest_curvature`, or `:even_spacing`. (default is `:steepest_slope`)"
     knot_refinement_strategy::Symbol = :steepest_slope
     "Write txt and csv files with solution info (default is False, most of this info is included in the solution objects that get return from `compute_cse`)"
     legacy_output::Bool = false
@@ -95,8 +95,8 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
         throw("Initial value of n cannot be bigger than maximum value of n")
     end
 
-    if cse_problem.knot_refinement_strategy ∉ [:steepest_slope, :highest_curvature]
-        throw("`knot_refinement_strategy` must be one of `:steepest_slope` or `:highest_curvature`")
+    if cse_problem.knot_refinement_strategy ∉ [:steepest_slope, :highest_curvature, :even_spacing]
+        throw("`knot_refinement_strategy` must be one of `:steepest_slope`, `:highest_curvature`, or `:even_spacing`")
     end
 
     if cse_problem.solver_initial_guess !== nothing
@@ -162,9 +162,8 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
     @debug "initial guess:" x
 
     # define the knot array
-    tmparr = collect(range(0, stop=1, length=n + 1))
-    knot[1, begin:n+1] .= tmparr
-    knot[2, begin:n+1] .= tmparr
+    knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+    knot[2, begin:n+1] .= knot[1, begin:n+1]
     @debug "knot 1: $(knot[1, :])"
     @debug "knot 2: $(knot[2, :])"
 
@@ -252,13 +251,19 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
             n += 1
             oldknot .= knot
 
-            # insert new knot point by splitting the interval with the largest change
-            @debug "Inserting new knot point after: $(split_idx)"
-            new_knot_val = (oldknot[1, split_idx] + oldknot[1, split_idx+1]) / 2.0
-            knot[1, split_idx+1] = new_knot_val
-            knot[1, split_idx+2:n+1] .= oldknot[1, split_idx+1:n]
-            # NOTE: there are assumptions elsewhere in the code about the knot points being the same for both players
-            knot[2, 1:n+1] .= knot[1, 1:n+1]
+            if cse_problem.knot_refinement_strategy == :even_spacing
+                @debug "Regenerating evenly spaced knots for n=$(n)"
+                knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+                knot[2, begin:n+1] .= knot[1, begin:n+1]
+            else
+                # insert new knot point by splitting the interval with the largest change
+                @debug "Inserting new knot point after: $(split_idx)"
+                new_knot_val = (oldknot[1, split_idx] + oldknot[1, split_idx+1]) / 2.0
+                knot[1, split_idx+1] = new_knot_val
+                knot[1, split_idx+2:n+1] .= oldknot[1, split_idx+1:n]
+                # NOTE: there are assumptions elsewhere in the code about the knot points being the same for both players
+                knot[2, 1:n+1] .= knot[1, 1:n+1]
+            end
             @debug "new knot 1: $(knot[1, :])"
             @debug "new knot 2: $(knot[2, :])"
 

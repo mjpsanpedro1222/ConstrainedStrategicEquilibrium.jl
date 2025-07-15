@@ -159,13 +159,10 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         x[begin:n] .= 2.0 .+ rand(n)
         x[n+1:2*n-1] .= -2.0 .- rand(n - 1)
     end
-    @debug "initial guess:" x
 
     # define the knot array
     knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
     knot[2, begin:n+1] .= knot[1, begin:n+1]
-    @debug "knot 1: $(knot[1, :])"
-    @debug "knot 2: $(knot[2, :])"
 
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
@@ -173,6 +170,9 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
     previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
+        @debug "Initial guess:" x
+        @debug "Knot 1:" knot[1, :]
+        @debug "Knot 2:" knot[2, :]
 
         # create Params object for passing extra info to the objective function
         cse_solution = AsymmetricCSESolution(problem=cse_problem, n=n, u=u)
@@ -264,8 +264,6 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
                 # NOTE: there are assumptions elsewhere in the code about the knot points being the same for both players
                 knot[2, 1:n+1] .= knot[1, 1:n+1]
             end
-            @debug "new knot 1: $(knot[1, :])"
-            @debug "new knot 2: $(knot[2, :])"
 
             yknot[1, 1] = 0.0
             yknot[2, 1] = 0.0

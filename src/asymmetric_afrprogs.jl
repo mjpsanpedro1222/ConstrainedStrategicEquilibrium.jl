@@ -285,7 +285,11 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
 
             for l in 1:n-1  # TODO:in their code this was to n, but that is beyond 2n-1???
                 aux = (yknot[2, l+1] - yknot[2, l]) / (yknot[1, l+1] - yknot[2, l])
+                if aux == 1.0
+                    aux = 1 - 1e-15
+                end
                 x[n+l] = log(aux / (1.0 - aux))
+                #@debug "calc next x" n+l x[n+l] aux yknot[2, l+1] yknot[2, l] yknot[1, l+1]
             end
         else
             n += 1

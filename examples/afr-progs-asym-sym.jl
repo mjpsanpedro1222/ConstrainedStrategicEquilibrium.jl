@@ -36,7 +36,7 @@ xguess[3] = log(0.25)
 # Create an asymmetric CSE problem with two players and both distributions the same:
 cse_prob = AsymmetricAfrprogsCSEProblem(
     inin=nval,
-    maxn=7,
+    maxn=12,
     np=2,
     mc=10000,
     solver_kwargs=(show_trace=Val(true), maxiters=2000, abstol=1e-6, reltol=1e-6),
@@ -55,10 +55,50 @@ solutions = compute_cse(cse_prob)
 
 # ## Postprocessing
 #
+# Compute the BNE
+
+bnex = Vector{Float64}(undef, 101)
+bney = Vector{Float64}(undef, 101)
+for m = 1:101
+    ti = (m - 1.0) / 100.0
+    if ti == 0
+        true_bne = 0.0
+    else
+        true_bne = compute_bne(ti, cse_prob.distributions[1], cse_prob.np)
+    end
+    bnex[m] = ti
+    bney[m] = true_bne
+    println("BNE($(ti)) = $(true_bne)")
+end
+
+#
+#
 # Loop over the solutions and plot them all:
 for sol in solutions
     if sol.success
+        println("n=$(sol.n)")
+
+        # compute MSE against BNE
+        mse1_sum = 0.0
+        mse2_sum = 0.0
+        for m = 1:101
+            if m == 1
+                cse1 = cse2 = 0
+            else
+                cse1 = sol.cse[!, "CSE(x) 1"][m]
+                cse2 = sol.cse[!, "CSE(x) 2"][m]
+            end
+            println("CSEs: $(cse1); $(cse2)")
+            mse1_sum += (sol.cse[!, "CSE(x) 1"][m] - bney[m])^2
+            mse2_sum += (sol.cse[!, "CSE(x) 2"][m] - bney[m])^2
+        end
+        mse1 = mse1_sum / 101
+        mse2 = mse2_sum / 101
+        println("MSE bidder 1: $(mse1)")
+        println("MSE bidder 2: $(mse2)")
+
         plot(sol, dpi=300)
+        plot!(bnex, bney, label="BNE")
 
         # We can also save the figure to a file (comment this line out if you don't want to)
         savefig("afr-progs-asym-n$(sol.n).png")

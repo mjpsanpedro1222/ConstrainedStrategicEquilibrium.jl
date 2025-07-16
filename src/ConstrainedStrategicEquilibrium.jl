@@ -40,6 +40,7 @@ include("asymmetric_afrprogs.jl")
 include("asymmetric_plot.jl")
 
 # define exports
+export compute_bne
 export SymmetricAfrprogsCSEProblem, validate_cse_problem, compute_cse, generate_cse_data
 export SymmetricJaePoly1CSEProblem
 export AsymmetricAfrprogsCSEProblem

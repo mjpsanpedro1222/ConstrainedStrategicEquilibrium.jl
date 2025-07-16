@@ -133,17 +133,9 @@ function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsPara
     alph = similar(da)
     bet = similar(da)
 
-    # beta distribution
-    # TODO: need to generalise for different distributions
-    betadist = p.dist
-    betadistparams = params(betadist)
-
     # set up the value of the constrained strategy parameters such that the
     # strategy is continuous
     # alph= constant, bet=slope, da(l)= derivative wrt l parameter
-
-    # TODO: need to generalise for different distributions?
-    const_val = beta(betadistparams...)
 
     da .= 0.0
     yknot[1] = 0.0
@@ -166,8 +158,8 @@ function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsPara
                 check = false
 
                 # TODO: need to generalise for different distributions?
-                cumu1 = cdf(betadist, ti)
-                dcumu1 = (ti^(betadistparams[1] - 1)) * ((1 - ti)^(betadistparams[2] - 1)) / const_val
+                cumu1 = cdf(p.dist, ti)
+                dcumu1 = pdf(p.dist, ti)
                 cumu = cumu1^(p.np - 1)
                 dcumu = (p.np - 1.0) * dcumu1 * cumu1^(p.np - 2)
 
@@ -196,7 +188,7 @@ function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsPara
         for m = 1:101
             ti = (m - 1.0) / 100.0
             bi = missing
-            true_bne = compute_bne(ti, betadist, p.np)
+            true_bne = compute_bne(ti, p.dist, p.np)
 
             # If the first element's result is NaN, replace it with 0.0
             if m == 1 && isnan(true_bne)

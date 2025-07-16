@@ -102,7 +102,7 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
     if cse_problem.solver_initial_guess !== nothing
         expected_length = 2 * cse_problem.inin - 1
         if length(cse_problem.solver_initial_guess) != expected_length
-            throw("Solver initial guess must have length $(expected_length) (actual length: $(length(cse_problem.inin)))")
+            throw("Solver initial guess must have length $(expected_length) (actual length: $(length(cse_problem.solver_initial_guess)))")
         end
     end
 end
@@ -187,7 +187,6 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         previous_solution = cse_solution
 
         # store the solution for this value of n
-        # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
 
         # log the solution

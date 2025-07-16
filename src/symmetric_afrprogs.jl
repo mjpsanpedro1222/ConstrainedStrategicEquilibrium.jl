@@ -37,6 +37,8 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     solver::Union{AbstractNonlinearAlgorithm,Nothing} = nothing
     "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
     solver_kwargs::NamedTuple = (;)
+    "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `inin`)"
+    solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
 end
 
 
@@ -84,6 +86,12 @@ function validate_cse_problem(cse_problem::SymmetricAfrprogsCSEProblem)
 
     if cse_problem.inin > cse_problem.maxn
         throw("Initial value of n cannot be bigger than maximum value of n")
+    end
+
+    if cse_problem.solver_initial_guess !== nothing
+        if length(cse_problem.solver_initial_guess) != cse_problem.inin
+            throw("Solver initial guess must have length $(cse_problem.inin) (actual length: $(length(cse_problem.solver_initial_guess)))")
+        end
     end
 end
 
@@ -282,31 +290,46 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
     @info "Computing: $(cse_problem)"
 
     # define some arrays
-    knot = Vector{Float64}(undef, cse_problem.maxn + 1)
-    oldknot = similar(knot)
-    yknot = similar(knot, length(knot) + 1)
+    knot = zeros(Float64, cse_problem.maxn + 1)
+    oldknot = zeros(Float64, cse_problem.maxn + 1)
+    yknot = zeros(Float64, cse_problem.maxn + 2)
     x = zeros(Float64, cse_problem.maxn)
-    fvec = similar(x)
-    alph = similar(x)
-    bet = similar(x)
+    fvec = zeros(Float64, cse_problem.maxn)
+    alph = zeros(Float64, cse_problem.maxn)
+    bet = zeros(Float64, cse_problem.maxn)
+
+    # initial values
+    n = cse_problem.inin
 
     # parameters initialisation
-    # TODO: depend on size on inin
-    oldknot[1] = 0.0
-    knot[1] = 0.0
-    knot[2] = 2.0 / 3.0
-    knot[3] = 1.0
-    # TODO: move initial guess to cse_problem
-    x[1] = log(0.25)
-    x[2] = log(0.25)
+    # knot
+    if n == 2
+        knot[1] = 0.0
+        knot[2] = 2.0 / 3.0
+        knot[3] = 1.0
+    else
+        knot[begin:n+1] .= range(0, stop=1, length=n + 1)
+    end
+    # initial guess
+    if cse_problem.solver_initial_guess !== nothing && length(cse_problem.solver_initial_guess) == n
+        @debug "Using passed solver initial guess"
+        x[begin:n] .= cse_problem.solver_initial_guess
+    elseif cse_problem.solver_initial_guess !== nothing && length(cse_problem.solver_initial_guess) != n
+        @warn "Ignoring passed solver initial guess as it is the wrong length"
+    else
+        # default values
+        @debug "Using default initial guess"
+        x[begin:n] .= log(0.25)
+    end
 
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
-    n = cse_problem.inin
     solutions = Vector{SymmetricCSESolution}(undef, 0)
     previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
+        @debug "Initial guess:" x
+        @debug "Knot:" knot
 
         # create Params object for passing extra info to the objective function
         cse_solution = SymmetricCSESolution(problem=cse_problem, n=n, u=u)
@@ -321,34 +344,39 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
         previous_solution = cse_solution
 
         # store the solution for this value of n
-        # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
 
         # log the solution
         @info cse_solution
 
+        # break the loop if failed
+        if !cse_solution.success
+            @error "Exiting compute_cse due to solve failed"
+            break
+        end
+
         # update the parameters before moving to a CSE with a higher k
-        yknot[1] = 0.0
-        for l = 1:n
-            yknot[l+1] = yknot[l] + exp(sol.u[l])
-            alph[l] = yknot[l]
-            bet[l] = (yknot[l+1] - yknot[l]) / (knot[l+1] - knot[l])
-        end
-
-        diff = 0.0
-        loc = missing
-        for l = 2:n
-            oldknot[l] = knot[l]
-            aux = abs(bet[l] - bet[l-1])
-            if aux > diff
-                diff = aux
-                loc = l
+        if n + 2 <= cse_problem.maxn
+            yknot[1] = 0.0
+            for l = 1:n
+                yknot[l+1] = yknot[l] + exp(sol.u[l])
+                alph[l] = yknot[l]
+                bet[l] = (yknot[l+1] - yknot[l]) / (knot[l+1] - knot[l])
             end
-        end
-        oldknot[n+1] = 1.0
 
-        n += 2
-        if n <= cse_problem.maxn
+            diff = 0.0
+            loc = missing
+            for l = 2:n
+                oldknot[l] = knot[l]
+                aux = abs(bet[l] - bet[l-1])
+                if aux > diff
+                    diff = aux
+                    loc = l
+                end
+            end
+            oldknot[n+1] = 1.0
+
+            n += 2
             knot[loc+1] = (oldknot[loc-1] + oldknot[loc] + oldknot[loc+1]) / 3.0
             knot[loc] = (oldknot[loc-1] + 2.0 * knot[loc+1]) / 3.0
             knot[n+1] = 1.0
@@ -375,6 +403,8 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
                 end
                 x[ll] = log(yknot[ll+1] - yknot[ll])
             end
+        else
+            n += 2
         end
     end
 

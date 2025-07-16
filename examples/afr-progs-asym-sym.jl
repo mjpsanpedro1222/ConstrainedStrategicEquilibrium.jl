@@ -37,7 +37,7 @@ xguess[3] = log(0.25)
 cse_prob = AsymmetricAfrprogsCSEProblem(
     inin=nval,
     maxn=12,
-    np=2,
+    np=4,
     mc=10000,
     solver_kwargs=(show_trace=Val(true), maxiters=2000, abstol=1e-6, reltol=1e-6),
     solver_initial_guess=xguess,

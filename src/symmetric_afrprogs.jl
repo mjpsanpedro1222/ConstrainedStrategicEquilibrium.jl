@@ -31,6 +31,8 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     inin::Int = 2
     "Maximum value for n (default is 16)"
     maxn::Int = 16
+    "Knot refinement strategy. Can be `:highest_curvature` or `:even_spacing`. (default is `:highest_curvature`)"
+    knot_refinement_strategy::Symbol = :highest_curvature
     "Write txt and csv files with solution info"
     legacy_output::Bool = false
     "The solver to use (default is to use the default set by NonlinearSolve.jl)"
@@ -86,6 +88,10 @@ function validate_cse_problem(cse_problem::SymmetricAfrprogsCSEProblem)
 
     if cse_problem.inin > cse_problem.maxn
         throw("Initial value of n cannot be bigger than maximum value of n")
+    end
+
+    if cse_problem.knot_refinement_strategy ∉ [:highest_curvature, :even_spacing]
+        throw("`knot_refinement_strategy` must be one of `:highest_curvature` or `:even_spacing`")
     end
 
     if cse_problem.solver_initial_guess !== nothing
@@ -364,29 +370,39 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
                 bet[l] = (yknot[l+1] - yknot[l]) / (knot[l+1] - knot[l])
             end
 
-            diff = 0.0
-            loc = missing
-            for l = 2:n
-                oldknot[l] = knot[l]
-                aux = abs(bet[l] - bet[l-1])
-                if aux > diff
-                    diff = aux
-                    loc = l
+            if cse_problem.knot_refinement_strategy == :even_spacing
+                for l = 2:n
+                    oldknot[l] = knot[l]
                 end
-            end
-            oldknot[n+1] = 1.0
+                oldknot[n+1] = 1.0
 
-            n += 2
-            knot[loc+1] = (oldknot[loc-1] + oldknot[loc] + oldknot[loc+1]) / 3.0
-            knot[loc] = (oldknot[loc-1] + 2.0 * knot[loc+1]) / 3.0
-            knot[n+1] = 1.0
+                n += 2
+                knot[begin:n+1] .= range(0, stop=1, length=n + 1)
+            else # :highest_curvature
+                diff = 0.0
+                loc = missing
+                for l = 2:n
+                    oldknot[l] = knot[l]
+                    aux = abs(bet[l] - bet[l-1])
+                    if aux > diff
+                        diff = aux
+                        loc = l
+                    end
+                end
+                oldknot[n+1] = 1.0
 
-            for l = 1:loc-1
-                knot[loc-l+1] = (oldknot[loc-l] + 2.0 * knot[loc+2-l]) / 3.0
-            end
+                n += 2
+                knot[loc+1] = (oldknot[loc-1] + oldknot[loc] + oldknot[loc+1]) / 3.0
+                knot[loc] = (oldknot[loc-1] + 2.0 * knot[loc+1]) / 3.0
+                knot[n+1] = 1.0
 
-            for l = loc+2:n
-                knot[l] = (oldknot[l-1] + 2.0 * knot[l-1]) / 3.0
+                for l = 1:loc-1
+                    knot[loc-l+1] = (oldknot[loc-l] + 2.0 * knot[loc+2-l]) / 3.0
+                end
+
+                for l = loc+2:n
+                    knot[l] = (oldknot[l-1] + 2.0 * knot[l-1]) / 3.0
+                end
             end
 
             yknot[1] = 0.0

@@ -254,6 +254,7 @@ function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64}
     previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
+        @debug "Initial guess:" x
 
         # create Params object for passing extra info to the objective function
         cse_solution = SymmetricCSESolution(problem=cse_problem, n=n, u=u)

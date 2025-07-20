@@ -49,7 +49,7 @@ savefig("jae-poly-1.png")
 # Now create a non-default problem, e.g. by increasing the value of n and the number of players and
 # selecting a different solver:
 
-cse_prob = SymmetricJaePoly1CSEProblem(np=6, maxn=8, solver=RobustMultiNewton())
+cse_prob = SymmetricJaePoly1CSEProblem(np=6, maxn=10)
 
 # Compute the CSE:
 

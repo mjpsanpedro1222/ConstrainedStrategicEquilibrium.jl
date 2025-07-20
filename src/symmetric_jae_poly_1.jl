@@ -28,8 +28,8 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=1..12, Distributions.Beta{Float64}(
     distribution::UnivariateDistribution = Kumaraswamy(2.5, 3.5)
     "Initial value for n (default is 1)"
     inin::Int = 1
-    "Maximum value for n (default is 5)"
-    maxn::Int = 5
+    "Maximum value for n (default is 12)"
+    maxn::Int = 16
     "Write txt and csv files with solution info (default is false)"
     legacy_output::Bool = false
     "The solver to use (default is to use the default set by NonlinearSolve.jl)"

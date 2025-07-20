@@ -40,9 +40,9 @@ sol = solutions[end]
 
 # Plot the final solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium.
 plot(sol, dpi=400)
-savefig("jae_poly_1.png")
+savefig("jae-poly-1.png")
 
-# View the plot showing the CSE and BNE: ![jae_poly_1.png](jae_poly_1.png)
+# View the plot showing the CSE and BNE: ![jae-poly-1.png](jae-poly-1.png)
 
 # ## Create a different problem and solve it
 #
@@ -58,6 +58,6 @@ solutions = compute_cse(cse_prob)
 # Finally, plot the last solution:
 
 plot(solutions[end], dpi=400)
-savefig("jae_poly_1_n9.png")
+savefig("jae-poly-1-np6.png")
 
-# View the plot showing the CSE and BNE: ![jae_poly_1_n9.png](jae_poly_1_n9.png)
+# View the plot showing the CSE and BNE: ![jae-poly-1-np6.png](jae-poly-1-np6.png)

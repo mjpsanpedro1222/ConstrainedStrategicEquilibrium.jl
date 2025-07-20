@@ -14,11 +14,13 @@
         sol.cse."x", sol.cse."CSE(x)"
     end
 
-    @series begin
-        seriescolor := 1
-        seriestype := :scatter
-        label := "Knots"
-        [sol.knot."knot(l-1)"[1]; sol.knot."knot(l)"], [0.0; sol.knot."CSE[knot(l)]"]
+    if length(sol.knot."knot(l)") > 0
+        @series begin
+            seriescolor := 1
+            seriestype := :scatter
+            label := "Knots"
+            [sol.knot."knot(l-1)"[1]; sol.knot."knot(l)"], [0.0; sol.knot."CSE[knot(l)]"]
+        end
     end
 
     @series begin

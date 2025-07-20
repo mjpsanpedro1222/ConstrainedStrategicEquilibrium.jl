@@ -11,10 +11,10 @@ $(TYPEDFIELDS)
 # Examples
 ```jldoctest
 julia> prob = SymmetricJaePoly1CSEProblem()
-SymmetricJaePoly1CSEProblem(np=4, mc=10000, n=2..16, Distributions.Beta{Float64}(α=3.0, β=3.0))
+SymmetricJaePoly1CSEProblem(np=4, mc=10000, n=1..5, Distributions.Kumaraswamy{Float64}(a=2.5, b=3.5))
 
 julia> prob = SymmetricJaePoly1CSEProblem(mc = 1000, maxn = 12, distribution = Beta(3, 4))
-SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(α=3.0, β=4.0))
+SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=1..12, Distributions.Beta{Float64}(α=3.0, β=4.0))
 ```
 """
 @kwdef struct SymmetricJaePoly1CSEProblem <: SymmetricCSEProblem
@@ -24,7 +24,7 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     mc::Int = 10000
     "Number of players (default is 4)"
     np::Int = 4
-    "Distribution to use (must be `Kumaraswamy` currently; default is `Kumaraswamy(2.5, 3.5)`)"
+    "Distribution to use (default is `Kumaraswamy(2.5, 3.5)`)"
     distribution::UnivariateDistribution = Kumaraswamy(2.5, 3.5)
     "Initial value for n (default is 1)"
     inin::Int = 1
@@ -54,11 +54,6 @@ will return silently.
 julia> prob = SymmetricJaePoly1CSEProblem();
 julia> validate_cse_problem(prob)
 
-julia> prob = SymmetricJaePoly1CSEProblem(distribution = Normal());
-julia> validate_cse_problem(prob)
-ERROR: "Only Kumaraswamy distributions are supported currently"
-[...]
-
 julia> prob = SymmetricJaePoly1CSEProblem(maxn = 0);
 julia> validate_cse_problem(prob)
 ERROR: "Initial value of n cannot be bigger than maximum value of n"
@@ -66,10 +61,6 @@ ERROR: "Initial value of n cannot be bigger than maximum value of n"
 ```
 """
 function validate_cse_problem(cse_problem::SymmetricJaePoly1CSEProblem)
-    if !(cse_problem.distribution isa Distributions.Kumaraswamy)
-        throw("Only Kumaraswamy distributions are supported currently")
-    end
-
     if cse_problem.np < 2
         throw("Not enough players")
     end
@@ -116,14 +107,11 @@ function objective_function_symmetric_jaepoly1(fvec, x, p::PolyParams)
         a += x[l] * p.knot^l
     end
 
-    # parameters of the distribution
-    distprms = params(p.dist)
-
     for m = 1:p.mc
         ti = p.u[m, 1]  # just for the first player
         if ti <= p.knot
-            cumu1 = 1.0 - (1.0 - ti^distprms[1])^distprms[2]
-            dcumu1 = distprms[1] * distprms[2] * (ti^(distprms[1] - 1.0)) * (1.0 - ti^distprms[1])^(distprms[2] - 1.0)
+            cumu1 = cdf(p.dist, ti)
+            dcumu1 = pdf(p.dist, ti)
             cumu = cumu1^(p.np - 1)
             dcumu = (p.np - 1.0) * dcumu1 * cumu1^(p.np - 2.0)
 

@@ -26,7 +26,7 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     np::Int = 4
     "Distribution to use (must be `Kumaraswamy` currently; default is `Kumaraswamy(2.5, 3.5)`)"
     distribution::UnivariateDistribution = Kumaraswamy(2.5, 3.5)
-    "Initial value for n (default is 1 and must be left as this currently)"
+    "Initial value for n (default is 1)"
     inin::Int = 1
     "Maximum value for n (default is 5)"
     maxn::Int = 5
@@ -59,11 +59,6 @@ julia> validate_cse_problem(prob)
 ERROR: "Only Kumaraswamy distributions are supported currently"
 [...]
 
-julia> prob = SymmetricJaePoly1CSEProblem(inin = 4);
-julia> validate_cse_problem(prob)
-ERROR: "Initial value of n must be 1 currently"
-[...]
-
 julia> prob = SymmetricJaePoly1CSEProblem(maxn = 0);
 julia> validate_cse_problem(prob)
 ERROR: "Initial value of n cannot be bigger than maximum value of n"
@@ -77,10 +72,6 @@ function validate_cse_problem(cse_problem::SymmetricJaePoly1CSEProblem)
 
     if cse_problem.np < 2
         throw("Not enough players")
-    end
-
-    if cse_problem.inin != 1
-        throw("Initial value of n must be 1 currently")
     end
 
     if cse_problem.inin > cse_problem.maxn

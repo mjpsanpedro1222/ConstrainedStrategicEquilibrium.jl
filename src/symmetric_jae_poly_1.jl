@@ -1,5 +1,4 @@
 
-# TODO: add stopping criteria tolerances; output files (data, results)
 """
 $(TYPEDEF)
 
@@ -108,7 +107,6 @@ Objective function for the symmetric jae_poly_1 case.
 """
 function objective_function_symmetric_jaepoly1(fvec, x, p::PolyParams)
     # note: important to use similar here in case using autodiff they could be of type dual from ForwardDiff
-    # TODO: preallocate for performance??
     da = similar(x)
 
     da .= 0.0
@@ -151,8 +149,6 @@ function objective_function_symmetric_jaepoly1(fvec, x, p::PolyParams)
 
     # if cvrg flag is set, output results
     if p.cvrg
-        # TODO: filenames should be an option
-        # TODO: output everything back as a solution instead of writing to file here?
         if p.legacy_output
             fout = open("sym-result-n-$(p.n).txt", "w")
             fcsv = open("sym-bids-private-values-n-$(p.n).csv", "w")
@@ -267,12 +263,16 @@ function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64}
         previous_solution = cse_solution
 
         # store the solution for this value of n
-        # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
 
         # log the solution
-        # TODO: only if successful?
         @info cse_solution
+
+        # break the loop if failed
+        if !cse_solution.success
+            @error "Exiting compute_cse due to solve failed"
+            break
+        end
 
         n += 1
         if n <= cse_problem.maxn

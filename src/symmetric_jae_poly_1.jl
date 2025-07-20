@@ -36,6 +36,8 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     solver::Union{AbstractNonlinearAlgorithm,Nothing} = nothing
     "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
     solver_kwargs::NamedTuple = (;)
+    "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `inin`)"
+    solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
 end
 
 
@@ -83,6 +85,12 @@ function validate_cse_problem(cse_problem::SymmetricJaePoly1CSEProblem)
 
     if cse_problem.inin > cse_problem.maxn
         throw("Initial value of n cannot be bigger than maximum value of n")
+    end
+
+    if cse_problem.solver_initial_guess !== nothing
+        if length(cse_problem.solver_initial_guess) != cse_problem.inin
+            throw("Solver initial guess must have length $(cse_problem.inin) (actual length: $(length(cse_problem.solver_initial_guess)))")
+        end
     end
 end
 
@@ -238,13 +246,19 @@ function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64}
     fvec = zeros(Float64, cse_problem.maxn)
 
     # parameters initialisation
-    # TODO: move initial guess to cse_problem
-    x[1] = 0.5
     knot = 0.95
+    n = cse_problem.inin
+    if cse_problem.solver_initial_guess !== nothing
+        @debug "Using passed solver initial guess"
+        x[begin:n] .= cse_problem.solver_initial_guess
+    else
+        # default values
+        @debug "Using default initial guess"
+        x[begin:n] .= 0.5
+    end
 
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
-    n = cse_problem.inin
     solutions = Vector{SymmetricCSESolution}(undef, 0)
     previous_solution = missing
     while n <= cse_problem.maxn

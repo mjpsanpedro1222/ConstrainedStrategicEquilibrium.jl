@@ -17,6 +17,7 @@
 using ConstrainedStrategicEquilibrium
 using Plots
 using NonlinearSolve
+using Distributions
 
 # ## Create the symmetric CSE problem
 #
@@ -46,10 +47,10 @@ savefig("jae-poly-1.png")
 
 # ## Create a different problem and solve it
 #
-# Now create a non-default problem, e.g. by increasing the value of n and the number of players and
-# selecting a different solver:
+# Now create a non-default problem, e.g. by changing the number of players, the distribution
+# and the maximum value of n:
 
-cse_prob = SymmetricJaePoly1CSEProblem(np=6, maxn=10)
+cse_prob = SymmetricJaePoly1CSEProblem(np=2, distribution=Beta(3, 3), maxn=14)
 
 # Compute the CSE:
 
@@ -58,6 +59,6 @@ solutions = compute_cse(cse_prob)
 # Finally, plot the last solution:
 
 plot(solutions[end], dpi=400)
-savefig("jae-poly-1-np6.png")
+savefig("jae-poly-1-beta.png")
 
-# View the plot showing the CSE and BNE: ![jae-poly-1-np6.png](jae-poly-1-np6.png)
+# View the plot showing the CSE and BNE: ![jae-poly-1-beta.png](jae-poly-1-beta.png)

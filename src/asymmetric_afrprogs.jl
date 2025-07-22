@@ -33,6 +33,8 @@ $(TYPEDFIELDS)
     solver_kwargs::NamedTuple = (;)
     "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `2 * inin - 1`)"
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
+    "Initial knot positions to use, if not provided use a default initial guess (must be length `inin + 1`)"
+    initial_knots::Union{Vector{Float64},Nothing} = nothing
 end
 
 
@@ -105,6 +107,16 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
             throw("Solver initial guess must have length $(expected_length) (actual length: $(length(cse_problem.solver_initial_guess)))")
         end
     end
+
+    if cse_problem.initial_knots !== nothing
+        expected_length = cse_problem.inin + 1
+        if length(cse_problem.initial_knots) != expected_length
+            throw("Initial knots must have length $(expected_length) (actual length: $(length(cse_problem.initial_knots)))")
+        end
+        if !issorted(cse_problem.initial_knots) || cse_problem.initial_knots[begin] != 0.0 || cse_problem.initial_knots[end] != 1.0
+            throw("Initial knots must be sorted and range from 0.0 to 1.0")
+        end
+    end
 end
 
 
@@ -161,7 +173,11 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
     end
 
     # define the knot array
-    knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+    if cse_problem.initial_knots !== nothing
+        knot[1, begin:n+1] .= cse_problem.initial_knots
+    else
+        knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+    end
     knot[2, begin:n+1] .= knot[1, begin:n+1]
 
     # enter a loop that calculates the CSE for different k

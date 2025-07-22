@@ -413,8 +413,19 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
             throw("Failed to find interval for bi in FOC 1")
         end
 
-        cumu = cumu1 * cumu2^2
-        dcumu = dcumu1 * (cumu2^2) / dbdt1 + 2 * dcumu2 * cumu1 * cumu2 / dbdt2
+        # Number of other bidders of same type (type 1)
+        n_same_type = (p.np == 2) ? 0 : 1  # 0 for 2-player, 1 for 4-player
+        # Number of bidders of other type (type 2) 
+        n_other_type = (p.np == 2) ? 1 : 2  # 1 for 2-player, 2 for 4-player
+
+        if n_same_type == 0
+            cumu = cumu2^n_other_type
+            dcumu = dcumu1 * cumu2^n_other_type / dbdt1 + n_other_type * dcumu2 * cumu2^(n_other_type-1) / dbdt2
+        else
+            cumu = cumu1^n_same_type * cumu2^n_other_type
+            dcumu = n_same_type * dcumu1 * cumu1^(n_same_type-1) * cumu2^n_other_type / dbdt1 + 
+                    n_other_type * dcumu2 * cumu1^n_same_type * cumu2^(n_other_type-1) / dbdt2
+        end
         da[l] = da[l] + dbdp * ((ti - bi) * dcumu - cumu)
 
         ########################################
@@ -467,8 +478,19 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
             throw("Failed to find interval for bi in FOC 2")
         end
 
-        cumu = cumu1 * cumu2^2
-        dcumu = dcumu1 * (cumu2^2) / dbdt1 + 2 * dcumu2 * cumu1 * cumu2 / dbdt2
+        # Number of other bidders of same type (type 2)
+        n_same_type = (p.np == 2) ? 0 : 1  # 0 for 2-player, 1 for 4-player
+        # Number of bidders of other type (type 1)
+        n_other_type = (p.np == 2) ? 1 : 2  # 1 for 2-player, 2 for 4-player
+
+        if n_same_type == 0
+            cumu = cumu2^n_other_type
+            dcumu = dcumu1 * cumu2^n_other_type / dbdt1 + n_other_type * dcumu2 * cumu2^(n_other_type-1) / dbdt2
+        else
+            cumu = cumu1^n_same_type * cumu2^n_other_type
+            dcumu = n_same_type * dcumu1 * cumu1^(n_same_type-1) * cumu2^n_other_type / dbdt1 + 
+                    n_other_type * dcumu2 * cumu1^n_same_type * cumu2^(n_other_type-1) / dbdt2
+        end
         da[n+l] += dbdp * ((ti - bi) * dcumu - cumu)
     end
 

@@ -36,12 +36,15 @@ solutions = compute_cse(cse_prob)
 
 # ## Postprocessing
 #
-# Select the final solution from the list
-sol = solutions[end]
+# Plot the final successful solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium.
 
-# Plot the final solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium.
-plot(sol, dpi=400)
-savefig("jae-poly-1.png")
+for sol in Iterators.reverse(solutions)
+    if sol.success
+        plot(sol, dpi=400)
+        savefig("jae-poly-1.png")
+        break
+    end
+end
 
 # View the plot showing the CSE and BNE: ![jae-poly-1.png](jae-poly-1.png)
 
@@ -56,9 +59,14 @@ cse_prob = SymmetricJaePoly1CSEProblem(np=2, distribution=Beta(3, 3), maxn=14)
 
 solutions = compute_cse(cse_prob)
 
-# Finally, plot the last solution:
+# Finally, plot the last successful solution:
 
-plot(solutions[end], dpi=400)
-savefig("jae-poly-1-beta.png")
+for sol in Iterators.reverse(solutions)
+    if sol.success
+        plot(sol, dpi=400)
+        savefig("jae-poly-1-beta.png")
+        break
+    end
+end
 
 # View the plot showing the CSE and BNE: ![jae-poly-1-beta.png](jae-poly-1-beta.png)

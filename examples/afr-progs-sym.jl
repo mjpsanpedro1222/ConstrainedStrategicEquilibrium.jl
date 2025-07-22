@@ -62,7 +62,7 @@ solutions = compute_cse(cse_prob)
 
 for sol in Iterators.reverse(solutions)
     if sol.success
-        plot(sol, dpi=400)
+        cseplot(sol; dpi=400)
         savefig("afr-progs-sym-beta2535.png")
         break
     end

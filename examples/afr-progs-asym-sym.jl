@@ -42,7 +42,7 @@ cse_prob = AsymmetricAfrprogsCSEProblem(
     solver_kwargs=(show_trace=Val(true), maxiters=2000, abstol=1e-6, reltol=1e-6),
     solver_initial_guess=xguess,
     distributions=[Beta(3, 3), Beta(3, 3)],
-    knot_refinement_strategy=:even_spacing,
+    knot_refinement_strategy=:double_knot,
 )
 
 # Now validate the problem we just created (this will throw an error if there is a mistake):

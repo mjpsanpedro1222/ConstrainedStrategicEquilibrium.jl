@@ -198,7 +198,8 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
             break
         end
 
-        if n + 1 <= cse_problem.maxn
+        newn = (cse_problem.knot_refinement_strategy == :double_knot) ? n + 2 : n + 1
+        if newn <= cse_problem.maxn
             # update the parameters before moving to a CSE with a higher k
             yknot[1, 1] = 0.0
             yknot[2, 1] = 0.0

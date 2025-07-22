@@ -41,12 +41,12 @@ solutions = compute_cse(cse_prob)
 for sol in Iterators.reverse(solutions)
     if sol.success
         plot(sol, dpi=300)
-        savefig("afr_progs_sym.png")
+        savefig("afr-progs-sym.png")
         break
     end
 end
 
-# View the plot showing the CSE and BNE: ![afr_progs_sym.png](afr_progs_sym.png)
+# View the plot showing the CSE and BNE: ![afr-progs-sym.png](afr-progs-sym.png)
 
 # ## Create a different problem and solve it
 #
@@ -62,10 +62,10 @@ solutions = compute_cse(cse_prob)
 
 for sol in Iterators.reverse(solutions)
     if sol.success
-        plot(solutions[end], dpi=400)
-        savefig("afr_progs_sym_n12.png")
+        plot(sol, dpi=400)
+        savefig("afr-progs-sym-beta2535.png")
         break
     end
 end
 
-# View the plot showing the CSE and BNE: ![afr_progs_sym_n12.png](afr_progs_sym_n12.png)
+# View the plot showing the CSE and BNE: ![afr-progs-sym-beta2535.png](afr-progs-sym-beta2535.png)

@@ -41,6 +41,8 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     solver_kwargs::NamedTuple = (;)
     "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `inin`)"
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
+    "Initial knot positions to use (must be length `inin` + 1, start with 0.0, and end with 1.0)"
+    initial_knots::Union{Vector{Float64},Nothing} = nothing
 end
 
 
@@ -97,6 +99,21 @@ function validate_cse_problem(cse_problem::SymmetricAfrprogsCSEProblem)
     if cse_problem.solver_initial_guess !== nothing
         if length(cse_problem.solver_initial_guess) != cse_problem.inin
             throw("Solver initial guess must have length $(cse_problem.inin) (actual length: $(length(cse_problem.solver_initial_guess)))")
+        end
+    end
+
+    if cse_problem.initial_knots !== nothing
+        if length(cse_problem.initial_knots) != cse_problem.inin + 1
+            throw("Initial knots must have length $(cse_problem.inin + 1) (actual length: $(length(cse_problem.initial_knots)))")
+        end
+        if !isapprox(cse_problem.initial_knots[1], 0.0)
+            throw("First initial knot must be 0.0")
+        end
+        if !isapprox(cse_problem.initial_knots[end], 1.0)
+            throw("Last initial knot must be 1.0")
+        end
+        if !issorted(cse_problem.initial_knots)
+            throw("Initial knots must be sorted")
         end
     end
 end
@@ -301,12 +318,18 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
 
     # parameters initialisation
     # knot
-    if n == 2
-        knot[1] = 0.0
-        knot[2] = 2.0 / 3.0
-        knot[3] = 1.0
+    if cse_problem.initial_knots !== nothing
+        @debug "Using passed initial knots"
+        knot[begin:n+1] .= cse_problem.initial_knots
     else
-        knot[begin:n+1] .= range(0, stop=1, length=n + 1)
+        @debug "Using default initial knots"
+        if n == 2
+            knot[1] = 0.0
+            knot[2] = 2.0 / 3.0
+            knot[3] = 1.0
+        else
+            knot[begin:n+1] .= range(0, stop=1, length=n + 1)
+        end
     end
     # initial guess
     if cse_problem.solver_initial_guess !== nothing && length(cse_problem.solver_initial_guess) == n

@@ -76,7 +76,7 @@ end
 # Loop over the solutions and plot them all:
 for sol in solutions
     if sol.success
-        println("n=$(sol.n)")
+        println("Plotting n=$(sol.n)")
 
         # compute MSE against BNE
         mse1_sum = 0.0
@@ -88,7 +88,7 @@ for sol in solutions
                 cse1 = sol.cse[!, "CSE(x) 1"][m]
                 cse2 = sol.cse[!, "CSE(x) 2"][m]
             end
-            println("CSEs: $(cse1); $(cse2)")
+            #println("CSEs: $(cse1); $(cse2)")
             mse1_sum += (sol.cse[!, "CSE(x) 1"][m] - bney[m])^2
             mse2_sum += (sol.cse[!, "CSE(x) 2"][m] - bney[m])^2
         end
@@ -97,7 +97,7 @@ for sol in solutions
         println("MSE bidder 1: $(mse1)")
         println("MSE bidder 2: $(mse2)")
 
-        plot(sol, dpi=300)
+        cseplot(sol, dpi=300)
         plot!(bnex, bney, label="BNE")
 
         # We can also save the figure to a file (comment this line out if you don't want to)

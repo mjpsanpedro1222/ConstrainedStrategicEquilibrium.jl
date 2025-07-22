@@ -17,11 +17,11 @@ using Logging
 
 include("utils.jl")
 
+# common functions and types
 include("base_types.jl")
 include("bne.jl")
 include("common_compute.jl")
 include("common_solve.jl")
-include("common_plot.jl")
 
 # include general symmetric case things
 include("symmetric_data.jl")
@@ -40,10 +40,14 @@ include("asymmetric_data.jl")
 include("asymmetric_afrprogs.jl")
 include("asymmetric_plot.jl")
 
+# plotting recipe
+include("common_plot.jl")
+
 # define exports
 export compute_bne
 export cseplot
-export SymmetricAfrprogsCSEProblem, validate_cse_problem, compute_cse, generate_cse_data
+export validate_cse_problem, compute_cse, generate_cse_data
+export SymmetricAfrprogsCSEProblem
 export SymmetricJaePoly1CSEProblem
 export AsymmetricAfrprogsCSEProblem
 

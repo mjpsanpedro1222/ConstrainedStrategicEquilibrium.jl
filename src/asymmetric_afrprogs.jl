@@ -23,7 +23,7 @@ $(TYPEDFIELDS)
     inin::Int = 16
     "Maximum value for `n` (default is 17)"
     maxn::Int = 17
-    "Knot refinement strategy. Can be `:steepest_slope`, `:highest_curvature`, or `:even_spacing`. (default is `:steepest_slope`)"
+    "Knot refinement strategy. Can be `:steepest_slope`, `:highest_curvature`, `:even_spacing`, or `:double_knot`. (default is `:steepest_slope`)"
     knot_refinement_strategy::Symbol = :steepest_slope
     "Write txt and csv files with solution info (default is False, most of this info is included in the solution objects that get return from `compute_cse`)"
     legacy_output::Bool = false
@@ -33,6 +33,8 @@ $(TYPEDFIELDS)
     solver_kwargs::NamedTuple = (;)
     "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `2 * inin - 1`)"
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
+    "Initial knot positions to use, if not provided use a default initial guess (must be length `inin + 1`)"
+    initial_knots::Union{Vector{Float64},Nothing} = nothing
 end
 
 
@@ -95,14 +97,24 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
         throw("Initial value of n cannot be bigger than maximum value of n")
     end
 
-    if cse_problem.knot_refinement_strategy ∉ [:steepest_slope, :highest_curvature, :even_spacing]
-        throw("`knot_refinement_strategy` must be one of `:steepest_slope`, `:highest_curvature`, or `:even_spacing`")
+    if cse_problem.knot_refinement_strategy ∉ [:steepest_slope, :highest_curvature, :even_spacing, :double_knot]
+        throw("`knot_refinement_strategy` must be one of `:steepest_slope`, `:highest_curvature`, `:even_spacing`, or `:double_knot`")
     end
 
     if cse_problem.solver_initial_guess !== nothing
         expected_length = 2 * cse_problem.inin - 1
         if length(cse_problem.solver_initial_guess) != expected_length
             throw("Solver initial guess must have length $(expected_length) (actual length: $(length(cse_problem.solver_initial_guess)))")
+        end
+    end
+
+    if cse_problem.initial_knots !== nothing
+        expected_length = cse_problem.inin + 1
+        if length(cse_problem.initial_knots) != expected_length
+            throw("Initial knots must have length $(expected_length) (actual length: $(length(cse_problem.initial_knots)))")
+        end
+        if !issorted(cse_problem.initial_knots) || cse_problem.initial_knots[begin] != 0.0 || cse_problem.initial_knots[end] != 1.0
+            throw("Initial knots must be sorted and range from 0.0 to 1.0")
         end
     end
 end
@@ -161,7 +173,11 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
     end
 
     # define the knot array
-    knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+    if cse_problem.initial_knots !== nothing
+        knot[1, begin:n+1] .= cse_problem.initial_knots
+    else
+        knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+    end
     knot[2, begin:n+1] .= knot[1, begin:n+1]
 
     # enter a loop that calculates the CSE for different k
@@ -198,7 +214,8 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
             break
         end
 
-        if n + 1 <= cse_problem.maxn
+        newn = (cse_problem.knot_refinement_strategy == :double_knot) ? n + 2 : n + 1
+        if newn <= cse_problem.maxn
             # update the parameters before moving to a CSE with a higher k
             yknot[1, 1] = 0.0
             yknot[2, 1] = 0.0
@@ -219,49 +236,84 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
             alph[2, n] = yknot[2, n]
             bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (knot[2, n+1] - knot[2, n])
 
-            # find interval to split for next iteration
-            split_idx = -1
-            if cse_problem.knot_refinement_strategy == :steepest_slope
-                # split interval with largest derivative (steepest slope)
-                slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
-                ~, split_idx = findmax(slopes)
-            elseif cse_problem.knot_refinement_strategy == :highest_curvature
-                # split interval with largest change in derivative (highest curvature)
-                if n > 1
-                    bet_diff1 = abs.(bet[1, 2:n] - bet[1, 1:n-1])
-                    bet_diff2 = abs.(bet[2, 2:n] - bet[2, 1:n-1])
-                    total_diffs = bet_diff1 + bet_diff2
-                    ~, idx = findmax(total_diffs)
-
-                    # between the two intervals that make the corner, pick the one with the steeper slope
-                    slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
-                    if slopes[idx] >= slopes[idx+1]
-                        split_idx = idx
-                    else
-                        split_idx = idx + 1
+            if cse_problem.knot_refinement_strategy == :double_knot
+                # Use symmetric approach: add 2 knots and use 1/3, 2/3 positioning
+                # find location with highest curvature (like symmetric)
+                diff = 0.0
+                loc = 2
+                for l = 2:n
+                    aux = abs(bet[1, l] - bet[1, l-1]) + abs(bet[2, l] - bet[2, l-1])
+                    if aux > diff
+                        diff = aux
+                        loc = l
                     end
-                else
-                    # cannot compute curvature with one interval, fallback to steepest slope
+                end
+
+                n += 2
+                oldknot .= knot
+
+                # Apply symmetric-style knot positioning
+                knot[1, loc+1] = (oldknot[1, loc-1] + oldknot[1, loc] + oldknot[1, loc+1]) / 3.0
+                knot[1, loc] = (oldknot[1, loc-1] + 2.0 * knot[1, loc+1]) / 3.0
+                knot[1, n+1] = 1.0
+
+                # Update knots before the split location
+                for l = 1:loc-1
+                    knot[1, loc-l+1] = (oldknot[1, loc-l] + 2.0 * knot[1, loc+2-l]) / 3.0
+                end
+
+                # Update knots after the split location
+                for l = loc+2:n
+                    knot[1, l] = (oldknot[1, l-1] + 2.0 * knot[1, l-1]) / 3.0
+                end
+
+                # Copy to second player (maintaining assumption they're the same)
+                knot[2, 1:n+1] .= knot[1, 1:n+1]
+            else
+                # find interval to split for next iteration
+                split_idx = -1
+                if cse_problem.knot_refinement_strategy == :steepest_slope
+                    # split interval with largest derivative (steepest slope)
                     slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
                     ~, split_idx = findmax(slopes)
+                elseif cse_problem.knot_refinement_strategy == :highest_curvature
+                    # split interval with largest change in derivative (highest curvature)
+                    if n > 1
+                        bet_diff1 = abs.(bet[1, 2:n] - bet[1, 1:n-1])
+                        bet_diff2 = abs.(bet[2, 2:n] - bet[2, 1:n-1])
+                        total_diffs = bet_diff1 + bet_diff2
+                        ~, idx = findmax(total_diffs)
+
+                        # between the two intervals that make the corner, pick the one with the steeper slope
+                        slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+                        if slopes[idx] >= slopes[idx+1]
+                            split_idx = idx
+                        else
+                            split_idx = idx + 1
+                        end
+                    else
+                        # cannot compute curvature with one interval, fallback to steepest slope
+                        slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+                        ~, split_idx = findmax(slopes)
+                    end
                 end
-            end
 
-            n += 1
-            oldknot .= knot
+                n += 1
+                oldknot .= knot
 
-            if cse_problem.knot_refinement_strategy == :even_spacing
-                @debug "Regenerating evenly spaced knots for n=$(n)"
-                knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
-                knot[2, begin:n+1] .= knot[1, begin:n+1]
-            else
-                # insert new knot point by splitting the interval with the largest change
-                @debug "Inserting new knot point after: $(split_idx)"
-                new_knot_val = (oldknot[1, split_idx] + oldknot[1, split_idx+1]) / 2.0
-                knot[1, split_idx+1] = new_knot_val
-                knot[1, split_idx+2:n+1] .= oldknot[1, split_idx+1:n]
-                # NOTE: there are assumptions elsewhere in the code about the knot points being the same for both players
-                knot[2, 1:n+1] .= knot[1, 1:n+1]
+                if cse_problem.knot_refinement_strategy == :even_spacing
+                    @debug "Regenerating evenly spaced knots for n=$(n)"
+                    knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+                    knot[2, begin:n+1] .= knot[1, begin:n+1]
+                else
+                    # insert new knot point by splitting the interval with the largest change
+                    @debug "Inserting new knot point after: $(split_idx)"
+                    new_knot_val = (oldknot[1, split_idx] + oldknot[1, split_idx+1]) / 2.0
+                    knot[1, split_idx+1] = new_knot_val
+                    knot[1, split_idx+2:n+1] .= oldknot[1, split_idx+1:n]
+                    # NOTE: there are assumptions elsewhere in the code about the knot points being the same for both players
+                    knot[2, 1:n+1] .= knot[1, 1:n+1]
+                end
             end
 
             yknot[1, 1] = 0.0

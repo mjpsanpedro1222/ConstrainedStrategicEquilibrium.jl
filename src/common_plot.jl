@@ -41,9 +41,11 @@ function cseplot end
     if isa(sol, SymmetricCSESolution)
         # options
         cse_label = get(plotattributes, :cse_label, "CSE")
+        cse_colour = get(plotattributes, :cse_colour, :1)
         knot_label = get(plotattributes, :knot_label, "Knots")
         add_bne = get(plotattributes, :add_bne, true)
         bne_label = get(plotattributes, :bne_label, "BNE")
+        bne_colour = get(plotattributes, :bne_colour, :2)
 
         # default title
         c1_string = isnan(sol.c_1) ? "" : @sprintf("; C_1=%.2e", sol.c_1)
@@ -54,7 +56,7 @@ function cseplot end
 
         # plot the CSE
         @series begin
-            seriescolor := 1
+            seriescolor := cse_colour
             label := cse_label
             sol.cse."x", sol.cse."CSE(x)"
         end
@@ -62,7 +64,7 @@ function cseplot end
         # optionally plot the knot points
         if (add_knots === true) && (length(sol.knot."knot(l)") > 0)
             @series begin
-                seriescolor := 1
+                seriescolor := cse_colour
                 seriestype := :scatter
                 label := knot_label
                 [sol.knot."knot(l-1)"[1]; sol.knot."knot(l)"], [0.0; sol.knot."CSE[knot(l)]"]
@@ -72,7 +74,7 @@ function cseplot end
         # optionally plot the BNE
         if add_bne
             @series begin
-                seriescolor := 2
+                seriescolor := bne_colour
                 label := bne_label
                 sol.cse."x", sol.cse."BNE(x)"
             end
@@ -80,6 +82,7 @@ function cseplot end
     elseif isa(sol, AsymmetricCSESolution)
         # options
         cse_label = get(plotattributes, :cse_label, Dict(:bidder1 => "CSE (1)", :bidder2 => "CSE (2)"))
+        cse_colour = get(plotattributes, :cse_colour, Dict(:bidder1 => :1, :bidder2 => :2))
         knot_label = get(plotattributes, :knot_label, Dict(:bidder1 => "Knots (1)", :bidder2 => "Knots (2)"))
 
         # default title
@@ -95,7 +98,7 @@ function cseplot end
 
         # plot the CSE for bidder 1
         @series begin
-            seriescolor := 1
+            seriescolor := cse_colour[:bidder1]
             label := cse_label[:bidder1]
             sol.cse."x", sol.cse."CSE(x) 1"
         end
@@ -103,7 +106,7 @@ function cseplot end
         # optionally, plot the knots for bidder 1
         if (add_knots === true) && (length(sol.knot[:bidder1]."knot(l)") > 0)
             @series begin
-                seriescolor := 1
+                seriescolor := cse_colour[:bidder1]
                 seriestype := :scatter
                 label := knot_label[:bidder1]
                 [sol.knot[:bidder1]."knot(l-1)"[1]; sol.knot[:bidder1]."knot(l)"], [0.0; sol.knot[:bidder1]."CSE[knot(l)]"]
@@ -112,7 +115,7 @@ function cseplot end
 
         # plot the CSE for bidder 2
         @series begin
-            seriescolor := 2
+            seriescolor := cse_colour[:bidder2]
             label := cse_label[:bidder2]
             sol.cse."x", sol.cse."CSE(x) 2"
         end
@@ -120,7 +123,7 @@ function cseplot end
         # optionally, plot the knots for bidder 2
         if (add_knots === true) && (length(sol.knot[:bidder2]."knot(l)") > 0)
             @series begin
-                seriescolor := 2
+                seriescolor := cse_colour[:bidder2]
                 seriestype := :scatter
                 label := knot_label[:bidder2]
                 [sol.knot[:bidder2]."knot(l-1)"[1]; sol.knot[:bidder2]."knot(l)"], [0.0; sol.knot[:bidder2]."CSE[knot(l)]"]

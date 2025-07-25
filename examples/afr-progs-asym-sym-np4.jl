@@ -101,6 +101,6 @@ for sol in solutions
         plot!(bnex, bney, label="BNE")
 
         # We can also save the figure to a file (comment this line out if you don't want to)
-        savefig("afr-progs-asym-n$(sol.n).png")
+        savefig("afr-progs-asym-np4-n$(sol.n).png")
     end
 end

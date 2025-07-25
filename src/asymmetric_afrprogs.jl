@@ -420,8 +420,6 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
 
         ti = p.u[m, 1]
         bi = missing
-        cumu1 = missing
-        dcumu1 = missing
         dbdt1 = missing
         dbdp = missing
         check = true
@@ -433,18 +431,14 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 dbdt1 = bet[1, l]
                 dbdp = (ti - p.knot[1, l]) / (p.knot[1, l+1] - p.knot[1, l])
                 check = false
-
-                cumu1 = cdf(dist1, ti)
-                dcumu1 = pdf(dist1, ti)
             end
         end
-        if cumu1 === missing
+        if bi === missing
             @error "Failed to find interval for ti in FOC 1" ti p.knot
             throw("Failed to find interval for ti in FOC 1")
         end
 
-        cumu2 = missing
-        dcumu2 = missing
+        # Find the inverse bid for the other player type
         dbdt2 = missing
         check = true
         ll = 0
@@ -455,33 +449,33 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 invbi = (bi - alph[2, ll]) / bet[2, ll] + p.knot[2, ll]
                 dbdt2 = bet[2, ll]
                 check = false
-
-                cumu2 = cdf(dist2, invbi)
-                dcumu2 = pdf(dist2, invbi)
             end
         end
-        if cumu2 === missing
+        if dbdt2 === missing
             @error "Failed to find interval for bi in FOC 1" bi yknot
             throw("Failed to find interval for bi in FOC 1")
         end
 
-        # Number of other bidders of same type (type 1)
-        n_same_type = (p.np == 2) ? 0 : 1  # 0 for 2-player, 1 for 4-player
-        # Number of bidders of other type (type 2) 
-        n_other_type = (p.np == 2) ? 1 : 2  # 1 for 2-player, 2 for 4-player
-
-        if n_same_type == 0
-            cumu = cumu2^n_other_type
-            dcumu = dcumu1 * cumu2^n_other_type / dbdt1 + n_other_type * dcumu2 * cumu2^(n_other_type-1) / dbdt2
+        # Calculate probabilities for bidder 1's FOC
+        if p.np == 2
+            # For 2 players: only need CDF of other player type at inverse bid
+            cumu = cdf(dist2, invbi)
+            dcumu = pdf(dist2, invbi) / dbdt2
         else
-            cumu = cumu1^n_same_type * cumu2^n_other_type
-            dcumu = n_same_type * dcumu1 * cumu1^(n_same_type-1) * cumu2^n_other_type / dbdt1 + 
-                    n_other_type * dcumu2 * cumu1^n_same_type * cumu2^(n_other_type-1) / dbdt2
+            # For 4 players: 1 same type, 2 other type
+            cumu1_own = cdf(dist1, ti)
+            dcumu1_own = pdf(dist1, ti)
+            cumu2_other = cdf(dist2, invbi)
+            dcumu2_other = pdf(dist2, invbi)
+            
+            cumu = cumu1_own * cumu2_other^2
+            dcumu = dcumu1_own * cumu2_other^2 / dbdt1 + 2 * dcumu2_other * cumu1_own * cumu2_other / dbdt2
         end
+        
         da[l] = da[l] + dbdp * ((ti - bi) * dcumu - cumu)
 
         ########################################
-        # FOC for Bidder 4
+        # FOC for Bidder 2 (or 4 in 4-player case)
         ########################################
 
         if p.np == 2
@@ -490,19 +484,18 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
             ti = p.u[m, 4]
         end
         bi = missing
+        dbdt1_b2 = missing
+        dbdp_b2 = missing
         check = true
         l = 0
         while check
             l += 1
             if ti >= p.knot[2, l] && ti <= p.knot[2, l+1]
                 bi = alph[2, l] + bet[2, l] * (ti - p.knot[2, l])
-                dbdt1 = bet[2, l]
-                dbdp = (ti - p.knot[2, l]) / (p.knot[2, l+1] - p.knot[2, l])
-                dbdp = dbdp * (p.knot[1, l+1] - p.knot[2, l])
+                dbdt1_b2 = bet[2, l]
+                dbdp_b2 = (ti - p.knot[2, l]) / (p.knot[2, l+1] - p.knot[2, l])
+                dbdp_b2 = dbdp_b2 * (p.knot[1, l+1] - p.knot[2, l])
                 check = false
-
-                cumu1 = cdf(dist2, ti)
-                dcumu1 = pdf(dist2, ti)
             end
         end
         if bi === missing
@@ -510,40 +503,41 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
             throw("Failed to find interval for ti in FOC 2")
         end
 
+        # Find the inverse bid for the other player type
         check = true
         ll = 0
         invbi = 1.0
-        cumu2 = missing
+        dbdt2_b2 = missing
         while check && ll < n
             ll += 1
             if bi >= yknot[1, ll] && bi <= yknot[1, ll+1] && ll <= n
                 invbi = (bi - alph[1, ll]) / bet[1, ll] + p.knot[1, ll]
-                dbdt2 = bet[1, ll]
+                dbdt2_b2 = bet[1, ll]
                 check = false
-
-                cumu2 = cdf(dist1, invbi)
-                dcumu2 = pdf(dist1, invbi)
             end
         end
-        if cumu2 === missing
+        if dbdt2_b2 === missing
             @error "Failed to find interval for bi in FOC 2" bi yknot
             throw("Failed to find interval for bi in FOC 2")
         end
 
-        # Number of other bidders of same type (type 2)
-        n_same_type = (p.np == 2) ? 0 : 1  # 0 for 2-player, 1 for 4-player
-        # Number of bidders of other type (type 1)
-        n_other_type = (p.np == 2) ? 1 : 2  # 1 for 2-player, 2 for 4-player
-
-        if n_same_type == 0
-            cumu = cumu2^n_other_type
-            dcumu = dcumu1 * cumu2^n_other_type / dbdt1 + n_other_type * dcumu2 * cumu2^(n_other_type-1) / dbdt2
+        # Calculate probabilities for bidder 2's FOC
+        if p.np == 2
+            # For 2 players: only need CDF of other player type at inverse bid
+            cumu = cdf(dist1, invbi)
+            dcumu = pdf(dist1, invbi) / dbdt2_b2
         else
-            cumu = cumu1^n_same_type * cumu2^n_other_type
-            dcumu = n_same_type * dcumu1 * cumu1^(n_same_type-1) * cumu2^n_other_type / dbdt1 + 
-                    n_other_type * dcumu2 * cumu1^n_same_type * cumu2^(n_other_type-1) / dbdt2
+            # For 4 players: 1 same type, 2 other type
+            cumu1_own = cdf(dist2, ti)
+            dcumu1_own = pdf(dist2, ti)
+            cumu2_other = cdf(dist1, invbi)
+            dcumu2_other = pdf(dist1, invbi)
+            
+            cumu = cumu1_own * cumu2_other^2
+            dcumu = dcumu1_own * cumu2_other^2 / dbdt1_b2 + 2 * dcumu2_other * cumu1_own * cumu2_other / dbdt2_b2
         end
-        da[n+l] += dbdp * ((ti - bi) * dcumu - cumu)
+        
+        da[n+l] += dbdp_b2 * ((ti - bi) * dcumu - cumu)
     end
 
     for l = 1:p.n-1

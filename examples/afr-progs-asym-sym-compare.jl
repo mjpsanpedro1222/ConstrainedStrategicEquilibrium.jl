@@ -56,7 +56,8 @@ function main()
     # Start from n=2 like the original sym.f code with the following initial guess that seems
     # to work OK initially:
 
-    xguess = [1.76034, 1.26109, -2.92289]
+#    xguess = [1.76034, 1.26109, -2.92289]
+    xguess = [1.58285, 1.02813, -1.66483]
     cse_prob2 = AsymmetricAfrprogsCSEProblem(
         inin=inin,
         maxn=maxn,

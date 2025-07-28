@@ -1,7 +1,47 @@
 # ConstrainedStrategicEquilibrium.jl
 
-Overview of the package...
+ConstrainedStrategicEquilibrium.jl is a Julia package for solving Constrained Strategic Equilibrium (CSE) problems in game theory and economics.
 
-## Installation
+## Features
 
-How to install...
+- **Multiple Problem Types**: Symmetric and asymmetric CSE problems
+- **Flexible Algorithms**: Support for NonlinearSolve.jl solvers
+- **Built-in Visualization**: Plotting recipes with RecipesBase
+- **Data Export**: Results as DataFrames for easy analysis
+
+## Problem Types Supported
+
+- `SymmetricAfrprogsCSEProblem` - Symmetric piecewise linear CSE form
+- `SymmetricJaePoly1CSEProblem` - Symmetric polynomial CSE form
+- `AsymmetricAfrprogsCSEProblem` - Asymmetric piecewise linear CSE form
+
+## Quick start
+
+From the source code directory run:
+
+```
+julia --project -e 'using Pkg; Pkg.instantiate()'
+```
+
+Then in the julia repl (enter by running `julia --project`):
+
+```julia
+using ConstrainedStrategicEquilbrium
+
+# create a CSE problem with default options
+prob = SymmetricJaePoly1CSEProblem()
+
+# solve the CSE problem
+solutions = compute_cse(prob)
+
+# print the vector of solutions
+println(solutions)
+
+# plot the last solution
+using Plots
+cseplot(solutions[end]; dpi=300)
+
+# store the computed CSE/BNE to csv file
+using CSV
+CSV.write("cse_result.csv", solutions[end].cse)
+```

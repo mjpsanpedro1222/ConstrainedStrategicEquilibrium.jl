@@ -25,10 +25,6 @@ using Distributions
 
 cse_prob = SymmetricJaePoly1CSEProblem(np=2, maxn=12)
 
-# You can view the default options by running:
-
-Base.doc(SymmetricJaePoly1CSEProblem)
-
 # ## Compute the CSE
 #
 # Now compute the CSE for the problem we created

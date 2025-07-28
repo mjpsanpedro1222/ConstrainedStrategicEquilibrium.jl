@@ -24,10 +24,6 @@ using Distributions
 
 cse_prob = SymmetricAfrprogsCSEProblem()
 
-# You can view the default options by running:
-
-Base.doc(SymmetricAfrprogsCSEProblem)
-
 # ## Compute the CSE
 #
 # Now compute the CSE for the problem we created

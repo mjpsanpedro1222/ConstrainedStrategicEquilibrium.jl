@@ -13,7 +13,7 @@ Contains the solution to the CSE problem.
 $(TYPEDFIELDS)
 """
 @kwdef mutable struct SymmetricCSESolution <: CSESolution
-    "A `DataFrame` containing the CSE and BNE evaluated at the given points"
+    "A `DataFrame` containing the CSE and BNE evaluated at the given points. Columns names are `x`, `CSE(x)` and `BNE(x)`."
     cse::DataFrame = DataFrame("x" => Float64[], "CSE(x)" => Float64[], "BNE(x)" => Float64[])
     "Mean squared error of the CSE compared to the BNE"
     mse::Float64 = NaN
@@ -24,17 +24,7 @@ $(TYPEDFIELDS)
     x_f::DataFrame = DataFrame("l" => Int[], "x(l)" => Float64[], "f(l)" => Float64[])
     "Whether the calculation was successful or not"
     success::Bool = false
-    "Number of function evaluations"
-    nfeval::Int = 0
-    "Number of Jacobians created during the solve"
-    njacs::Int = 0
-    "Number of factorisations of the Jacobian required for the solve"
-    nfactors::Int = 0
-    "Number of linear solves required for the solve"
-    nsolve::Int = 0
-    "Total number of iterations for the nonlinear solver"
-    nsteps::Int = 0
-    "Stop criteria C_1 (comparison of CSE with previous n value)"
+    "Stop criteria C_1 (comparison of the CSE at the current value of n with the CSE at the previous value of n)"
     c_1::Float64 = NaN
     "Stop criteria C_2 (norm of the residual)"
     c_2::Float64 = NaN

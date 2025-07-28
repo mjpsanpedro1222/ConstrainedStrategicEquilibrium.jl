@@ -1,0 +1,3 @@
+# Plotting a CSE solution
+
+How to plot...

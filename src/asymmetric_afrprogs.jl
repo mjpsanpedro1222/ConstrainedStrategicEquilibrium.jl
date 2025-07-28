@@ -4,7 +4,8 @@
 """
 $(TYPEDEF)
 
-Define an asymmetric CSE problem.
+The asymmetric CSE problem adapted from the Fortran code released by Armantier et al. alongside their paper,
+"Approximation of Nash equilibria in Bayesian games" [armantier2008cse](@cite).
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
@@ -61,6 +62,10 @@ julia> validate_cse_problem(prob)
 ERROR: "Initial value of n cannot be bigger than maximum value of n"
 [...]
 ```
+
+# References
+
+* [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
     if !all(x -> isa(x, Distributions.Beta) || isa(x, Distributions.Uniform), cse_problem.distributions)
@@ -467,11 +472,11 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
             dcumu1_own = pdf(dist1, ti)
             cumu2_other = cdf(dist2, invbi)
             dcumu2_other = pdf(dist2, invbi)
-            
+
             cumu = cumu1_own * cumu2_other^2
             dcumu = dcumu1_own * cumu2_other^2 / dbdt1 + 2 * dcumu2_other * cumu1_own * cumu2_other / dbdt2
         end
-        
+
         da[l] = da[l] + dbdp * ((ti - bi) * dcumu - cumu)
 
         ########################################
@@ -532,11 +537,11 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
             dcumu1_own = pdf(dist2, ti)
             cumu2_other = cdf(dist1, invbi)
             dcumu2_other = pdf(dist1, invbi)
-            
+
             cumu = cumu1_own * cumu2_other^2
             dcumu = dcumu1_own * cumu2_other^2 / dbdt1_b2 + 2 * dcumu2_other * cumu1_own * cumu2_other / dbdt2_b2
         end
-        
+
         da[n+l] += dbdp_b2 * ((ti - bi) * dcumu - cumu)
     end
 

@@ -1,6 +1,7 @@
 push!(LOAD_PATH, joinpath(@__DIR__, ".."))
 
 using Documenter
+using DocumenterCitations
 using Literate
 using ConstrainedStrategicEquilibrium
 
@@ -69,12 +70,20 @@ pages = [
 
 format = Documenter.HTML(
     prettyurls=get(ENV, "CI", nothing) == "true",
+    assets=String["assets/citations.css"],
+)
+
+# citations
+bib = CitationBibliography(
+    joinpath(@__DIR__, "src", "refs.bib");
+    style=:numeric,
 )
 
 makedocs(
     sitename="ConstrainedStrategicEquilibrium.jl",
     format=format,
     pages=pages,
+    plugins=[bib],
 )
 
 #deploydocs(

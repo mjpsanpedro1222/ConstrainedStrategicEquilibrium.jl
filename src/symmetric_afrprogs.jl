@@ -3,7 +3,8 @@
 """
 $(TYPEDEF)
 
-The symmetric CSE problem from afr-progs.
+The symmetric CSE problem adapted from the Fortran code released by Armantier et al. alongside their paper,
+"Approximation of Nash equilibria in Bayesian games" [armantier2008cse](@cite).
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
@@ -17,6 +18,10 @@ SymmetricAfrprogsCSEProblem(np=4, mc=10000, n=2..16, Distributions.Beta{Float64}
 julia> prob = SymmetricAfrprogsCSEProblem(mc = 1000, maxn = 12, distribution = Beta(3, 4))
 SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(α=3.0, β=4.0))
 ```
+
+# References
+
+* [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 @kwdef struct SymmetricAfrprogsCSEProblem <: SymmetricCSEProblem
     "Random number generator to use during data generation (default rng is seeded with 642867)"

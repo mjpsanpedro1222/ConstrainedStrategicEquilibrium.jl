@@ -4,6 +4,8 @@
 CurrentModule = ConstrainedStrategicEquilibrium
 ```
 
+Full API reference:
+
 ```@index
 ```
 

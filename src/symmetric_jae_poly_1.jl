@@ -2,7 +2,7 @@
 """
 $(TYPEDEF)
 
-The jae_poly_1 symmetric CSE problem from Computer_Code_CSE.
+The jae\\_poly\\_1 symmetric CSE problem from Computer\\_Code\\_CSE.
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 

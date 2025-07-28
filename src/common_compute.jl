@@ -4,7 +4,7 @@ $(TYPEDSIGNATURES)
 
 Compute the given CSE problem.
 
-This function will validate the problem, generate the data and the comute the CSE.
+This function will validate the problem, generate the data and the compute the CSE, returning the vector of solutions.
 """
 function compute_cse(cse_problem::CSEProblem)
     # validate the problem

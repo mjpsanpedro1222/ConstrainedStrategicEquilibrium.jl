@@ -9,7 +9,7 @@ This problem can have either 2 or 4 players. In the case of 4 players, players 1
 and players 3 and 4 must have the same distribution.
 
 Note regarding the solver: `cdf` does not seem to support dual numbers so you may need to specify a different option
-for `autodiff`, e.g. `autodiff=AutoFiniteDiff()`, instead of `ForwardDiff()`.
+for `autodiff`, e.g. `autodiff=AutoFiniteDiff()`, instead of the default `ForwardDiff()`.
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
@@ -349,6 +349,7 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
             for l in 1:n-1  # TODO:in their code this was to n, but that is beyond 2n-1???
                 aux = (yknot[2, l+1] - yknot[2, l]) / (yknot[1, l+1] - yknot[2, l])
                 if aux == 1.0
+                    # avoiding division by zero when running with all players with the same distribution
                     aux = 1 - 1e-15
                 end
                 x[n+l] = log(aux / (1.0 - aux))

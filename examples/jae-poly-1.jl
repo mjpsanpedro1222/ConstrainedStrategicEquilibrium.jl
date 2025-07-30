@@ -36,7 +36,7 @@ solutions = compute_cse(cse_prob)
 
 for sol in Iterators.reverse(solutions)
     if sol.success
-        plot(sol, dpi=400)
+        cseplot(sol, dpi=400)
         savefig("jae-poly-1.png")
         break
     end

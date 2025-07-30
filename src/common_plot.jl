@@ -5,21 +5,29 @@
     cseplot(sol::CSESolution; kwargs...)
 
 Plot the given `CSESolution`. Some additional keyword arguments are available (in addition to the
-standard plotting options, such as `dpi`). When `sol` is a `SymmetricCSESolution` these are:
+standard plotting options, such as `dpi`, `title`, etc.).
+
+When `sol` is a `SymmetricCSESolution` these are (default values shown):
 
 - `cse_label::String = "CSE"` - the label for the CSE line
+- `cse_colour::Symbol = :1` - the colour for the CSE line
 - `add_knots::Bool = true` - whether or not to show the knot points on the graph
 - `knots_label::String = "Knots"` - the label for the knot points
 - `add_bne::Bool = true` - whether or not to show the BNE on the graph
 - `bne_label::String = "BNE"` - the label for the BNE line
+- `bne_colour::Symbol = :2` - the colour for the BNE line
 
-When `sol` is an `AsymmetricCSESolution` the extra options are:
+When `sol` is an `AsymmetricCSESolution` the extra options are (default values shown):
 
 - `cse_label::Dict{Symbol, String} = Dict(:bidder1 => "CSE (1), :bidder2 => "CSE (2)")` - the labels
-  for the CSE lines for each bidder
+- `cse_colour::Dict{Symbol, Symbol} = Dict(:bidder1 => :1, :bidder2 => :2` - the colours
+  for the CSE lines for each bidder (the keys in the dictionary must be as shown)
 - `add_knots::Bool = true` - whether or not to show the knot points on the graph
 - `knots_label::Dict{Symbol, String} = Dict(:bidder1 => "Knots (1)", :bidder2 => "Knots (2)")` - the
-  labels for the knot points for each bidder
+  labels for the knot points for each bidder (the keys in the dictionary must be as shown)
+
+In addition to the above options, `cseplot` will set a default `title` and `xlabel` and `ylabel`,
+however these can be overriden with keyword arguments.
 """
 function cseplot end
 

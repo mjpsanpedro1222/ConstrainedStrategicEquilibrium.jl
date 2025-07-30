@@ -1,3 +1,5 @@
-# Plotting a CSE solution
+# Plotting a solution
 
-How to plot...
+```@docs; canonical=false
+ConstrainedStrategicEquilibrium.cseplot
+```

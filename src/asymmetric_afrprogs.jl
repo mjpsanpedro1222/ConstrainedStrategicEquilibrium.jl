@@ -9,7 +9,7 @@ This problem can have either 2 or 4 players. In the case of 4 players, players 1
 and players 3 and 4 must have the same distribution.
 
 Note regarding the solver: `cdf` does not seem to support dual numbers so you may need to specify a different option
-for `autodiff`, e.g. `autodiff=AutoFiniteDiff`, instead of `ForwardDiff`.
+for `autodiff`, e.g. `autodiff=AutoFiniteDiff()`, instead of `ForwardDiff()`.
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 

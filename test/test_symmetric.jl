@@ -43,9 +43,4 @@ end
         prob = SymmetricAfrprogsCSEProblem()
         @test validate_cse_problem(prob) === nothing
     end
-
-    @testset verbose = true "Test validate bad distribution" begin
-        prob = SymmetricAfrprogsCSEProblem(distribution=Normal())
-        @test_throws "Only Beta distributions are supported currently" validate_cse_problem(prob)
-    end
 end

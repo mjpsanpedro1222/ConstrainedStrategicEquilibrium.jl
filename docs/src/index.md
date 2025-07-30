@@ -11,9 +11,9 @@ ConstrainedStrategicEquilibrium.jl is a Julia package for solving Constrained St
 
 ## Problem Types Supported
 
-- `SymmetricAfrprogsCSEProblem` - Symmetric piecewise linear CSE form
-- `SymmetricJaePoly1CSEProblem` - Symmetric polynomial CSE form
-- `AsymmetricAfrprogsCSEProblem` - Asymmetric piecewise linear CSE form
+- [`SymmetricAfrprogsCSEProblem`](@ref) - Symmetric piecewise linear CSE form
+- [`SymmetricJaePoly1CSEProblem`](@ref) - Symmetric polynomial CSE form
+- [`AsymmetricAfrprogsCSEProblem`](@ref) - Asymmetric piecewise linear CSE form
 
 ## Quick start
 
@@ -40,6 +40,7 @@ println(solutions)
 # plot the last solution
 using Plots
 cseplot(solutions[end]; dpi=300)
+savefig("jae-poly-1-result.png")
 
 # store the computed CSE/BNE to csv file
 using CSV

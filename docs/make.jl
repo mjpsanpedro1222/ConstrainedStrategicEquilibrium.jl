@@ -63,7 +63,7 @@ pages = [
     "Home" => "index.md",
     "Basics" => basics_pages,
     "Examples" => example_pages,
-    "API" => "api.md"
+    "API reference"=> "api.md"
 ]
 
 # build and deploy docs

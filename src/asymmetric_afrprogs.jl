@@ -1,11 +1,15 @@
 
-
-# TODO: add stopping criteria tolerances; output files (data, results)
 """
 $(TYPEDEF)
 
 The asymmetric CSE problem adapted from the Fortran code released by Armantier et al. alongside their paper,
 "Approximation of Nash equilibria in Bayesian games" [armantier2008cse](@cite).
+
+This problem can have either 2 or 4 players. In the case of 4 players, players 1 and 2 must have the same distribution
+and players 3 and 4 must have the same distribution.
+
+Note regarding the solver: `cdf` does not seem to support dual numbers so you may need to specify a different option
+for `autodiff`, e.g. `autodiff=AutoFiniteDiff`, instead of `ForwardDiff`.
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
@@ -16,9 +20,9 @@ $(TYPEDFIELDS)
     rng::AbstractRNG = Random.seed!(642867)
     "Number of Monte Carlo steps (default is 10000)"
     mc::Int = 10000
-    "Number of players (must be 2 or 4 currently)"
-    np::Int = 2
-    "Distributions to use, which should be a Vector of length `np` (valid distributions are Beta and Uniform currently)"
+    "Number of players, which must be 2 or 4 currently (default is 4)"
+    np::Int = 4
+    "Distributions to use, which should be a Vector of length 2 or 4. With 4 players, the first 2 players and second 2 players must have the same distributions respectively."
     distributions::Vector{UnivariateDistribution} = [Beta(3, 3), Beta(5, 3)]
     "Initial value for `n` (default is 16)"
     inin::Int = 16
@@ -36,6 +40,10 @@ $(TYPEDFIELDS)
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
     "Initial knot positions to use, if not provided use a default initial guess (must be length `inin + 1`)"
     initial_knots::Union{Vector{Float64},Nothing} = nothing
+end
+
+function Base.show(io::IO, obj::AsymmetricAfrprogsCSEProblem)
+    print(io, "AsymmetricAfrprogsCSEProblem(np=$(obj.np), mc=$(obj.mc), n=$(obj.inin)..$(obj.maxn))")
 end
 
 
@@ -68,10 +76,6 @@ ERROR: "Initial value of n cannot be bigger than maximum value of n"
 * [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
-    if !all(x -> isa(x, Distributions.Beta) || isa(x, Distributions.Uniform), cse_problem.distributions)
-        throw("Only Beta or Uniform distributions are supported currently")
-    end
-
     if length(cse_problem.distributions) != cse_problem.np
         if (length(cse_problem.distributions) == 2) && (cse_problem.np == 4)
             @info "Using $(cse_problem.distributions[1]) for bidders 1 and 2; $(cse_problem.distributions[2]) for bidders 3 and 4."
@@ -147,7 +151,10 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Compute CSE for asymmetric case defined by `cse_problem`.
+Specific implementation of `compute_cse` for the afr-progs asymmetric case.
+
+Call this function if you have already manually validated the problem and generated
+the data. The data must have shape `(cse_problem.mc, cse_problem.np)`.
 """
 function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64})
     @info "Computing: $(cse_problem)"

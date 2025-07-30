@@ -1,5 +1,4 @@
 
-# TODO: add stopping criteria tolerances; output files (data, results)
 """
 $(TYPEDEF)
 
@@ -11,6 +10,7 @@ Parameters can be passed in as keyword arguments or can be omitted to accept the
 $(TYPEDFIELDS)
 
 # Examples
+
 ```jldoctest
 julia> prob = SymmetricAfrprogsCSEProblem()
 SymmetricAfrprogsCSEProblem(np=4, mc=10000, n=2..16, Distributions.Beta{Float64}(α=3.0, β=3.0))
@@ -30,9 +30,9 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     mc::Int = 10000
     "Number of players (default is 2)"
     np::Int = 2
-    "Distribution to use (must be `Beta` currently; default is `Beta(3, 3)`)"
+    "Distribution to use (default is `Beta(3, 3)`)"
     distribution::UnivariateDistribution = Beta(3, 3)
-    "Initial value for n (default is 2 and must be left as this currently)"
+    "Initial value for n (default is 2)"
     inin::Int = 2
     "Maximum value for n (default is 16)"
     maxn::Int = 16
@@ -40,7 +40,7 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     knot_refinement_strategy::Symbol = :highest_curvature
     "Write txt and csv files with solution info"
     legacy_output::Bool = false
-    "The solver to use (default is to use the default set by NonlinearSolve.jl)"
+    "The solver to use (default is to use the default solver from NonlinearSolve.jl)"
     solver::Union{AbstractNonlinearAlgorithm,Nothing} = nothing
     "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
     solver_kwargs::NamedTuple = (;)
@@ -48,6 +48,10 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
     "Initial knot positions to use (must be length `inin` + 1, start with 0.0, and end with 1.0)"
     initial_knots::Union{Vector{Float64},Nothing} = nothing
+end
+
+function Base.show(io::IO, obj::SymmetricAfrprogsCSEProblem)
+    print(io, "SymmetricAfrprogsCSEProblem(np=$(obj.np), mc=$(obj.mc), n=$(obj.inin)..$(obj.maxn), $(simplify_distribution_string(repr(obj.distribution))))")
 end
 
 
@@ -64,16 +68,6 @@ will return silently.
 julia> prob = SymmetricAfrprogsCSEProblem();
 julia> validate_cse_problem(prob)
 
-julia> prob = SymmetricAfrprogsCSEProblem(distribution = Normal());
-julia> validate_cse_problem(prob)
-ERROR: "Only Beta distributions are supported currently"
-[...]
-
-julia> prob = SymmetricAfrprogsCSEProblem(inin = 4);
-julia> validate_cse_problem(prob)
-ERROR: "Initial value of n must be 2 currently"
-[...]
-
 julia> prob = SymmetricAfrprogsCSEProblem(maxn = 1);
 julia> validate_cse_problem(prob)
 ERROR: "Initial value of n cannot be bigger than maximum value of n"
@@ -81,16 +75,8 @@ ERROR: "Initial value of n cannot be bigger than maximum value of n"
 ```
 """
 function validate_cse_problem(cse_problem::SymmetricAfrprogsCSEProblem)
-    if !(cse_problem.distribution isa Distributions.Beta)
-        throw("Only Beta distributions are supported currently")
-    end
-
     if cse_problem.np < 2
         throw("Not enough players")
-    end
-
-    if cse_problem.inin != 2
-        throw("Initial value of n must be 2 currently")
     end
 
     if cse_problem.inin > cse_problem.maxn
@@ -148,8 +134,7 @@ $(TYPEDSIGNATURES)
 Objective function for the symmetric afrprogs case.
 """
 function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsParams)
-    # note: important to use similar here in case using autodiff they could be of type dual from ForwardDiff
-    # TODO: preallocate for performance??
+    # NOTE: important to use similar here in case using autodiff they could be of type dual from ForwardDiff instead of Float64
     da = similar(x)
     yknot = similar(x, length(x) + 1)
     alph = similar(da)
@@ -179,7 +164,6 @@ function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsPara
                 dbdp = (ti - p.knot[l]) / (p.knot[l+1] - p.knot[l])
                 check = false
 
-                # TODO: need to generalise for different distributions?
                 cumu1 = cdf(p.dist, ti)
                 dcumu1 = pdf(p.dist, ti)
                 cumu = cumu1^(p.np - 1)
@@ -304,7 +288,10 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Compute CSE for symmetric case defined by `cse_problem`.
+Specific implementation of `compute_cse` for the afr-progs symmetric case.
+
+Call this function if you have already manually validated the problem and generated
+the data. The data must have shape `(cse_problem.mc, cse_problem.np)`.
 """
 function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64})
     @info "Computing: $(cse_problem)"

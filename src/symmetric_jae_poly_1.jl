@@ -11,10 +11,10 @@ $(TYPEDFIELDS)
 # Examples
 ```jldoctest
 julia> prob = SymmetricJaePoly1CSEProblem()
-SymmetricJaePoly1CSEProblem(np=4, mc=10000, n=1..5, Distributions.Kumaraswamy{Float64}(a=2.5, b=3.5))
+SymmetricJaePoly1CSEProblem(np=4, mc=10000, n=1..12, Distributions.Kumaraswamy{Float64}(a=2.5, b=3.5))
 
-julia> prob = SymmetricJaePoly1CSEProblem(mc = 1000, maxn = 12, distribution = Beta(3, 4))
-SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=1..12, Distributions.Beta{Float64}(α=3.0, β=4.0))
+julia> prob = SymmetricJaePoly1CSEProblem(np=2, mc=1000, maxn=8, distribution=Beta(3, 4))
+SymmetricJaePoly1CSEProblem(np=2, mc=1000, n=1..8, Distributions.Beta{Float64}(α=3.0, β=4.0))
 ```
 """
 @kwdef struct SymmetricJaePoly1CSEProblem <: SymmetricCSEProblem
@@ -29,7 +29,7 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=1..12, Distributions.Beta{Float64}(
     "Initial value for n (default is 1)"
     inin::Int = 1
     "Maximum value for n (default is 12)"
-    maxn::Int = 16
+    maxn::Int = 12
     "Write txt and csv files with solution info (default is false)"
     legacy_output::Bool = false
     "The solver to use (default is to use the default set by NonlinearSolve.jl)"
@@ -38,6 +38,10 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=1..12, Distributions.Beta{Float64}(
     solver_kwargs::NamedTuple = (;)
     "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `inin`)"
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
+end
+
+function Base.show(io::IO, obj::SymmetricJaePoly1CSEProblem)
+    print(io, "SymmetricJaePoly1CSEProblem(np=$(obj.np), mc=$(obj.mc), n=$(obj.inin)..$(obj.maxn), $(simplify_distribution_string(repr(obj.distribution))))")
 end
 
 
@@ -215,7 +219,10 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Compute CSE for "jae_poly_1" symmetric case defined by `cse_problem`.
+Specific implementation of `compute_cse` for the "jae\\_poly\\_1" symmetric case.
+
+Call this function if you have already manually validated the problem and generated
+the data. The data must have shape `(cse_problem.mc, cse_problem.np)`.
 """
 function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64})
     @info "Computing: $(cse_problem)"

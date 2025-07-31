@@ -58,7 +58,7 @@ basics_pages = [
     "CSE problems" => "basics/cse_problem.md",
     "CSE solutions" => "basics/cse_solution.md",
     "Solving a CSE" => "basics/solve.md",
-    "Plotting a CSE solution" => "basics/plotting.md",
+    "Plotting a CSE" => "basics/plotting.md",
 ]
 
 pages = [

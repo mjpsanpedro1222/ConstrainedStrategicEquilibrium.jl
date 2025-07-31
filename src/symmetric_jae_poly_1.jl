@@ -2,7 +2,8 @@
 """
 $(TYPEDEF)
 
-The jae\\_poly\\_1 symmetric CSE problem from Computer\\_Code\\_CSE.
+The jae\\_poly\\_1 symmetric CSE problem from Computer\\_Code\\_CSE based on the paper by
+Armantier et al., "Approximation of Nash equilibria in Bayesian games" [armantier2008cse](@cite).
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
@@ -15,6 +16,9 @@ SymmetricJaePoly1CSEProblem(np=4, mc=10000, n=1..12, Distributions.Kumaraswamy{F
 
 julia> prob = SymmetricJaePoly1CSEProblem(np=2, mc=1000, maxn=8, distribution=Beta(3, 4))
 SymmetricJaePoly1CSEProblem(np=2, mc=1000, n=1..8, Distributions.Beta{Float64}(α=3.0, β=4.0))
+
+# References
+* [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 ```
 """
 @kwdef struct SymmetricJaePoly1CSEProblem <: SymmetricCSEProblem

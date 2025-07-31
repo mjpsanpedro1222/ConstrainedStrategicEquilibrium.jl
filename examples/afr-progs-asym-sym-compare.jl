@@ -133,6 +133,5 @@ cseplot!(
 plot!(bne2x, bne2y, label="BNE (np=2)", dpi=300, seriescolor=:5)
 plot!(bne4x, bne4y, label="BNE (np=4)", dpi=300, seriescolor=:6)
 
-# Finally, save the figure to file:
-
-savefig("afr-progs-asym-sym-compare.png")
+## save the figure to file: #jl
+savefig("afr-progs-asym-sym-compare.png")  #jl

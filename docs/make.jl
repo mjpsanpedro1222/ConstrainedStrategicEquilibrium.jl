@@ -15,6 +15,7 @@ examples = Dict(
     "afr-progs-sym" => "Symmetric CSE - piecewise linear",
     "jae-poly-1" => "Symmetric CSE - polynomial",
     "afr-progs-asym-sym-compare" => "Asymmetric - symmetric CSE test",
+    "afr-progs-asym-sym-np2-hyper" => "Hyperparameter optimisation for initial conditions",
 )
 
 @info "Generating examples"

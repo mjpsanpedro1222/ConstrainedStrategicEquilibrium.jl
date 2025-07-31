@@ -14,6 +14,7 @@ const EXAMPLES_RELATIVE_PATH = "generated"
 examples = Dict(
     "afr-progs-sym" => "Symmetric CSE - piecewise linear",
     "jae-poly-1" => "Symmetric CSE - polynomial",
+    "afr-progs-asym-sym-compare" => "Asymmetric - symmetric CSE test",
 )
 
 @info "Generating examples"
@@ -71,6 +72,7 @@ pages = [
 format = Documenter.HTML(
     prettyurls=get(ENV, "CI", nothing) == "true",
     assets=String["assets/citations.css"],
+    size_threshold=500_000,
 )
 
 # citations

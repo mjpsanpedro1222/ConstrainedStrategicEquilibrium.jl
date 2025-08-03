@@ -1,6 +1,10 @@
 # ConstrainedStrategicEquilibrium.jl
 
-ConstrainedStrategicEquilibrium.jl is a Julia package for solving Constrained Strategic Equilibrium (CSE) problems in game theory and economics.
+ConstrainedStrategicEquilibrium.jl is a Julia package for solving Constrained
+Strategic Equilibrium (CSE) problems in game theory and economics.
+
+It has been implemented based on the work by Armantier et al [armantier2008cse](@cite)
+and the Fortran code released alongside that publication.
 
 ## Features
 

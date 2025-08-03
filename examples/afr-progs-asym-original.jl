@@ -1,6 +1,8 @@
-# # ASymmetric CSE example from afrprogs
+# # Asymmetric CSE example from afrprogs
 #
-# This example is doing roughly the same thing as the asym.f example code from afrprogs.
+# This example is roughly equivalent to the *asym.f* example code from the supporting material
+# to the paper by Armantier et al. [armantier2008cse](@cite). Instead of just running a single
+# `n` value (`n = 16`), it runs for `n = 17` too.
 #
 # ## Install dependencies
 #
@@ -21,7 +23,7 @@ using NonlinearSolve
 
 # ## Create the CSE problem
 #
-# The original fortran asym code used n=16 and the following initial guess:
+# The original fortran asym code used `n = 16` and the following initial guess:
 
 nval = 16
 xguess = Vector{Float64}(undef, 2 * nval - 1)
@@ -57,9 +59,9 @@ xguess[29] = 0.726435662568677
 xguess[30] = 0.619443991395723
 xguess[31] = 1.12697386952317
 
-#
-# Create an asymmetric CSE problem with the following (not we make a small change
-# from the Fortran asym.f code by running from n=16 to n=17, instead of just n=16):
+# Create an asymmetric CSE problem with the following (note we make a small change
+# from the Fortran asym.f code by running from `n = 16` to `n = 17`, instead of just `n = 16`):
+
 cse_prob = AsymmetricAfrprogsCSEProblem(
     inin=nval,
     maxn=nval + 1,
@@ -69,20 +71,31 @@ cse_prob = AsymmetricAfrprogsCSEProblem(
     solver_initial_guess=xguess,
 )
 
-# Now validate the problem we just created (this will throw an error if there is a mistake):
-validate_cse_problem(cse_prob)
-
 # ## Compute the CSE
 #
 # Now compute the CSE for the problem we created
+
 solutions = compute_cse(cse_prob)
 
 # ## Postprocessing
 #
-# Loop over the solutions and plot them all:
+# Loop over the solutions and plot them all
+
 for sol in solutions
     plot(sol, dpi=300)
 
-    # We can also save the figure to a file (comment this line out if you don't want to)
+    ## Save the figure to a file
     savefig("afr-progs-asym-n$(sol.n).png")
 end
+
+# View the result for `n=16`:
+#
+# ![afr-progs-asym-n16.png](afr-progs-asym-n16.png)
+#
+# and `n=17`:
+#
+# ![afr-progs-asym-n17.png](afr-progs-asym-n17.png)
+
+# ## References
+#
+# * [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)

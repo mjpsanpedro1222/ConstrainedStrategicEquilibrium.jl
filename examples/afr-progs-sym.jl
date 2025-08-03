@@ -1,6 +1,7 @@
 # # Symmetric CSE example - piecewise linear form
 #
-# This is a simple example of how to run the symmetric CSE case from afr_progs.
+# This is a simple example of how to run the symmetric CSE case from the supporting material
+# to the paper by Armantier et al. [armantier2008cse](@cite).
 #
 # ## Install dependencies
 #
@@ -65,3 +66,7 @@ for sol in Iterators.reverse(solutions)
 end
 
 # View the plot showing the CSE and BNE: ![afr-progs-sym-beta2535.png](afr-progs-sym-beta2535.png)
+
+# ## References
+#
+# * [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)

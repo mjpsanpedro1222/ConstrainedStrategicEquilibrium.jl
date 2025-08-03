@@ -1,23 +1,48 @@
 # Contrained Strategic Equilibrium Julia package
 
-Prototype of how we could have a Julia package... would be best to move this to its own repo
+ConstrainedStrategicEquilibrium.jl is a Julia package for solving Constrained
+Strategic Equilibrium (CSE) problems in game theory and economics.
+
+It has been implemented based on the work by Armantier et al and the Fortran
+code released alongside their paper [https://doi.org/10.1002/jae.1040](https://doi.org/10.1002/jae.1040).
 
 ## Install dependencies
 
 From this directory run:
 
 ```
-julia --project
+julia --project -e 'using Pkg; Pkg.instantiate()'
 ```
 
-then run:
+## Run a simple case
+
+In the julia repl (enter by running `julia --project`):
 
 ```julia
-julia> using Pkg
-julia> Pkg.instantiate()
+using ConstrainedStrategicEquilbrium
+
+# create a CSE problem with default options
+prob = SymmetricJaePoly1CSEProblem()
+
+# solve the CSE problem
+solutions = compute_cse(prob)
+
+# print the vector of solutions
+println(solutions)
+
+# plot the last solution
+using Plots
+cseplot(solutions[end]; dpi=300)
+savefig("jae-poly-1-result.png")
+
+# store the computed CSE/BNE to csv file
+using CSV
+CSV.write("cse_result.csv", solutions[end].cse)
 ```
 
-## Run symmetric example
+## Run an example
+
+Enter the Julia REPL (`julia --project`).
 
 Run the example symmetric calculation (from afr-progs) using:
 
@@ -46,17 +71,17 @@ julia> using DataFrames
 julia> df = CSV.read("cse_result.csv", DataFrame)
 ```
 
-You could also run the symmetric jae_poly_1 example:
+Many of the other examples can also be run this way, for example:
 
 ```julia
 julia> include("examples/jae-poly-1.jl")
 ```
 
-and so on...
-
 ## Build the docs
 
-Need to instantiate the docs project first:
+You can build the documentation locally, which can be useful while developing the docs further.
+
+First, you need to instantiate the docs project:
 
 ```
 julia --project=docs -e "using Pkg; Pkg.instantiate()"
@@ -68,7 +93,7 @@ Then build the docs:
 julia --project=docs docs/make.jl
 ```
 
-Open *docs/build/index.html*.
+Open *docs/build/index.html* in your browser to view the local version of the docs.
 
 ## Enable debug logging
 
@@ -78,5 +103,3 @@ export this environment variable before running julia:
 ```
 export JULIA_DEBUG=ConstrainedStrategicEquilibrium
 ```
-
-## More to come...

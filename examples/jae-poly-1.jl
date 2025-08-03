@@ -1,6 +1,7 @@
 # # Symmetric CSE example - polynomial form
 #
-# This is a simple example of how to run the jae\_poly\_1 symmetric CSE case from Computer\_Code\_CSE.
+# This is a simple example of how to run the jae\_poly\_1 symmetric CSE case from Computer\_Code\_CSE
+# coming from the work by Armantier et al. [armantier2008cse](@cite).
 #
 # ## Install dependencies
 #
@@ -43,3 +44,7 @@ for sol in Iterators.reverse(solutions)
 end
 
 # View the plot showing the CSE and BNE: ![jae-poly-1.png](jae-poly-1.png)
+
+# ## References
+#
+# * [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)

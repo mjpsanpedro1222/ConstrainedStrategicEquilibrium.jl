@@ -72,7 +72,6 @@ ERROR: "Initial value of n cannot be bigger than maximum value of n"
 ```
 
 # References
-
 * [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)

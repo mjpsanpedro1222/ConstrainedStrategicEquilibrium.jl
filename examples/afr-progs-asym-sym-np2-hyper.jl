@@ -110,9 +110,10 @@ best_guess = with_logger(logger) do
 end
 println("Best guess initial condition: $best_guess")
 
-## Run a full problem using the guess
+# ## Use the best guess
 #
-# Create a full problem (i.e. not just for `n=2`) using the initial guess we found above.
+# Create a full problem, in this case solving for `n=2..16`, starting from the best initial
+# guess that we found above.
 
 cse_prob = AsymmetricAfrprogsCSEProblem(
     inin=2,

@@ -14,6 +14,9 @@ for `autodiff`, e.g. `autodiff=AutoFiniteDiff()`, instead of the default `Forwar
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
 $(TYPEDFIELDS)
+
+# References
+* [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 @kwdef struct AsymmetricAfrprogsCSEProblem <: AsymmetricCSEProblem
     "Random number generator to use during data generation (default rng is seeded with 642867)"

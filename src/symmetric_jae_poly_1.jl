@@ -16,10 +16,10 @@ SymmetricJaePoly1CSEProblem(np=4, mc=10000, n=1..12, Distributions.Kumaraswamy{F
 
 julia> prob = SymmetricJaePoly1CSEProblem(np=2, mc=1000, maxn=8, distribution=Beta(3, 4))
 SymmetricJaePoly1CSEProblem(np=2, mc=1000, n=1..8, Distributions.Beta{Float64}(α=3.0, β=4.0))
+```
 
 # References
 * [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
-```
 """
 @kwdef struct SymmetricJaePoly1CSEProblem <: SymmetricCSEProblem
     "Random number generator to use during data generation (default rng is seeded with 642867)"

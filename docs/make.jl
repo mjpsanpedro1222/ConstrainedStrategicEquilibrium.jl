@@ -90,6 +90,6 @@ makedocs(
     plugins=[bib],
 )
 
-#deploydocs(
-#    repo = "",
-#)
+deploydocs(
+    repo = "github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl.git",
+)

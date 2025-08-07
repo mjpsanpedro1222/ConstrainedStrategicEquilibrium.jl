@@ -1,6 +1,7 @@
 name = "ConstrainedStrategicEquilibrium"
 uuid = "05d11b4f-2d49-4ad8-8303-04c47d6ab303"
-authors = ["Chris Scott <chris@chrisdjscott.co.uk>"]
+authors = ["Marcus Jude San Pedro <marcus.jude.san.pedro@auckland.ac.nz>",
+           "Chris Scott <c.scott@auckland.ac.nz>"]
 version = "0.1.0"
 
 [deps]

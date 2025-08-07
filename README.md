@@ -6,6 +6,8 @@ Strategic Equilibrium (CSE) problems in game theory and economics.
 It has been implemented based on the work by Armantier et al and the Fortran
 code released alongside their paper [https://doi.org/10.1002/jae.1040](https://doi.org/10.1002/jae.1040).
 
+Additional documentation can be found [here](https://mjpsanpedro1222.github.io/ConstrainedStrategicEquilibrium.jl/).
+
 ## Install dependencies
 
 From this directory run:

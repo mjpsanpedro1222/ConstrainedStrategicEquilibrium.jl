@@ -4,17 +4,6 @@
         @test validate_cse_problem(prob) === nothing
     end
 
-    @testset verbose = true "Test validate bad distribution" begin
-        prob = AsymmetricAfrprogsCSEProblem(np=2, distributions=[Normal(), Beta()])
-        @test_throws "Only Beta distributions are supported currently" validate_cse_problem(prob)
-
-        prob = AsymmetricAfrprogsCSEProblem(np=2, distributions=[Normal(), Normal()])
-        @test_throws "Only Beta distributions are supported currently" validate_cse_problem(prob)
-
-        prob = AsymmetricAfrprogsCSEProblem(np=2, distributions=[Beta(), Beta()])
-        @test validate_cse_problem(prob) === nothing
-    end
-
     @testset verbose = true "Test validate 4 player distributions" begin
         prob = AsymmetricAfrprogsCSEProblem(np=4, distributions=[Beta(), Beta(), Beta(), Beta()])
         @test validate_cse_problem(prob) === nothing

@@ -1,6 +1,7 @@
 # # Symmetric CSE example - piecewise linear form
 #
-# This is a simple example of how to run the symmetric CSE case from afr_progs.
+# This is a simple example of how to run the symmetric CSE case from the supporting material
+# to the paper by Armantier et al. [armantier2008cse](@cite).
 #
 # ## Install dependencies
 #
@@ -24,10 +25,6 @@ using Distributions
 
 cse_prob = SymmetricAfrprogsCSEProblem()
 
-# You can view the default options by running:
-
-Base.doc(SymmetricAfrprogsCSEProblem)
-
 # ## Compute the CSE
 #
 # Now compute the CSE for the problem we created
@@ -35,14 +32,18 @@ solutions = compute_cse(cse_prob)
 
 # ## Postprocessing
 #
-# Select the final solution from the list
-sol = solutions[end]
+# Plot the final successful solution, comparing the computed CSE to the "analytical"
+# Bayes-Nash Equilibrium and save the figure to a file.
 
-# Plot the final solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium and save the figure to a file.
-plot(sol, dpi=300)
-savefig("afr_progs_sym.png")
+for sol in Iterators.reverse(solutions)
+    if sol.success
+        cseplot(sol; dpi=300)
+        savefig("afr-progs-sym.png")
+        break
+    end
+end
 
-# View the plot showing the CSE and BNE: ![afr_progs_sym.png](afr_progs_sym.png)
+# View the plot showing the CSE and BNE: ![afr-progs-sym.png](afr-progs-sym.png)
 
 # ## Create a different problem and solve it
 #
@@ -54,9 +55,18 @@ cse_prob = SymmetricAfrprogsCSEProblem(maxn=12, distribution=Beta(2.5, 3.5))
 
 solutions = compute_cse(cse_prob)
 
-# Finally, plot the last solution:
+# Finally, plot the last successful solution:
 
-plot(solutions[end], dpi=400)
-savefig("afr_progs_sym_n12.png")
+for sol in Iterators.reverse(solutions)
+    if sol.success
+        cseplot(sol; dpi=400)
+        savefig("afr-progs-sym-beta2535.png")
+        break
+    end
+end
 
-# View the plot showing the CSE and BNE: ![afr_progs_sym_n12.png](afr_progs_sym_n12.png)
+# View the plot showing the CSE and BNE: ![afr-progs-sym-beta2535.png](afr-progs-sym-beta2535.png)
+
+# ## References
+#
+# * [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)

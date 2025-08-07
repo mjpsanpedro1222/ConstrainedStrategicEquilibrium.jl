@@ -1,6 +1,7 @@
 # # Symmetric CSE example - polynomial form
 #
-# This is a simple example of how to run the jae\_poly\_1 symmetric CSE case from Computer\_Code\_CSE.
+# This is a simple example of how to run the jae\_poly\_1 symmetric CSE case from Computer\_Code\_CSE
+# coming from the work by Armantier et al. [armantier2008cse](@cite).
 #
 # ## Install dependencies
 #
@@ -17,16 +18,13 @@
 using ConstrainedStrategicEquilibrium
 using Plots
 using NonlinearSolve
+using Distributions
 
 # ## Create the symmetric CSE problem
 #
-# Create the default symmetric CSE problem with the following:
+# Create the CSE problem with two players and a maximum n value of 12:
 
-cse_prob = SymmetricJaePoly1CSEProblem()
-
-# You can view the default options by running:
-
-Base.doc(SymmetricJaePoly1CSEProblem)
+cse_prob = SymmetricJaePoly1CSEProblem(np=2, maxn=12)
 
 # ## Compute the CSE
 #
@@ -35,29 +33,18 @@ solutions = compute_cse(cse_prob)
 
 # ## Postprocessing
 #
-# Select the final solution from the list
-sol = solutions[end]
+# Plot the final successful solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium.
 
-# Plot the final solution comparing the computed CSE to the "analytical" Bayes-Nash Equilibrium.
-plot(sol, dpi=400)
-savefig("jae_poly_1.png")
+for sol in Iterators.reverse(solutions)
+    if sol.success
+        cseplot(sol, dpi=400)
+        savefig("jae-poly-1.png")
+        break
+    end
+end
 
-# View the plot showing the CSE and BNE: ![jae_poly_1.png](jae_poly_1.png)
+# View the plot showing the CSE and BNE: ![jae-poly-1.png](jae-poly-1.png)
 
-# ## Create a different problem and solve it
+# ## References
 #
-# Now create a non-default problem, e.g. by increasing the value of n and the number of players and
-# selecting a different solver:
-
-cse_prob = SymmetricJaePoly1CSEProblem(np=6, maxn=8, solver=RobustMultiNewton())
-
-# Compute the CSE:
-
-solutions = compute_cse(cse_prob)
-
-# Finally, plot the last solution:
-
-plot(solutions[end], dpi=400)
-savefig("jae_poly_1_n9.png")
-
-# View the plot showing the CSE and BNE: ![jae_poly_1_n9.png](jae_poly_1_n9.png)
+# * [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)

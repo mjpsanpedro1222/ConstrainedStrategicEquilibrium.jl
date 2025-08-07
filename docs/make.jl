@@ -1,52 +1,93 @@
 push!(LOAD_PATH, joinpath(@__DIR__, ".."))
 
 using Documenter
+using DocumenterCitations
 using Literate
 using ConstrainedStrategicEquilibrium
 
 # generate examples, based on https://github.com/CliMA/Oceananigans.jl/blob/1c2a6f8752b6425bf30d856f8ba0aa681c0ab818/docs/make.jl
 
-const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
-const OUTPUT_DIR = joinpath(@__DIR__, "src", "generated")
+const EXAMPLES_INPUT_DIR = joinpath(@__DIR__, "..", "examples")
+const EXAMPLES_OUTPUT_DIR = joinpath(@__DIR__, "src", "generated")
+const EXAMPLES_RELATIVE_PATH = "generated"
 
-example_scripts = [
-    "afr-progs-sym.jl",
-    "jae-poly-1.jl",
-]
+examples = Dict(
+    "afr-progs-sym" => "Symmetric CSE - piecewise linear",
+    "jae-poly-1" => "Symmetric CSE - polynomial",
+    "afr-progs-asym-original" => "Asymmetric CSE - piecewise linear",
+    "afr-progs-asym-sym-compare" => "Asymmetric - symmetric CSE test",
+    "afr-progs-asym-sym-np2-hyper" => "Hyperparameter optimisation for initial conditions",
+)
 
-println("Building examples...")
-for example in example_scripts
-    println("Building: $example")
-    example_filepath = joinpath(EXAMPLES_DIR, example)
+@info "Generating examples"
+example_pages = Array{Pair{String,String},1}()
+for (example_name, example_title) in examples
+    @info "Generating exmaple: $example_name"
 
-    Literate.markdown(example_filepath, OUTPUT_DIR;
-        flavor=Literate.DocumenterFlavor(), execute=true)
+    example_input_file = joinpath(EXAMPLES_INPUT_DIR, example_name * ".jl")
+    example_output_file = joinpath(EXAMPLES_OUTPUT_DIR, example_name * ".md")
+
+    # check if we need to generate the markdown
+    generate_markdown = true
+    if isfile(example_output_file)
+        mtime_generated = mtime(example_output_file)
+        mtime_source = mtime(example_input_file)
+
+        # don't need to generate if the generated file was modified more recently than the source
+        if mtime_generated > mtime_source
+            @info "Skipping generation of $example_name (already generated)"
+            generate_markdown = false
+        end
+    end
+
+    if generate_markdown
+        Literate.markdown(
+            example_input_file,
+            EXAMPLES_OUTPUT_DIR;
+            flavor=Literate.DocumenterFlavor(),
+            execute=true
+        )
+    end
+
+    push!(example_pages, example_title => joinpath(EXAMPLES_RELATIVE_PATH, example_name * ".md"))
 end
-println("Finished building examples")
+@info "Finished generating examples"
 
 # organise pages
 
-example_pages = [
-    "Symmetric CSE - piecewise linear" => "generated/afr-progs-sym.md",
-    "Symmetric CSE - polynomial" => "generated/jae-poly-1.md",
+basics_pages = [
+    "CSE problems" => "basics/cse_problem.md",
+    "CSE solutions" => "basics/cse_solution.md",
+    "Solving a CSE" => "basics/solve.md",
+    "Plotting a CSE" => "basics/plotting.md",
 ]
 
 pages = [
     "Home" => "index.md",
+    "Basics" => basics_pages,
     "Examples" => example_pages,
-    "API" => "api.md"
+    "API reference"=> "api.md"
 ]
 
 # build and deploy docs
 
 format = Documenter.HTML(
     prettyurls=get(ENV, "CI", nothing) == "true",
+    assets=String["assets/citations.css"],
+    size_threshold=500_000,
+)
+
+# citations
+bib = CitationBibliography(
+    joinpath(@__DIR__, "src", "refs.bib");
+    style=:numeric,
 )
 
 makedocs(
     sitename="ConstrainedStrategicEquilibrium.jl",
     format=format,
     pages=pages,
+    plugins=[bib],
 )
 
 #deploydocs(

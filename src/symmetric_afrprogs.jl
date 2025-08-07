@@ -1,15 +1,16 @@
 
-# TODO: add stopping criteria tolerances; output files (data, results)
 """
 $(TYPEDEF)
 
-The symmetric CSE problem from afr-progs.
+The symmetric CSE problem adapted from the Fortran code released by Armantier et al. alongside their paper,
+"Approximation of Nash equilibria in Bayesian games" [armantier2008cse](@cite).
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
 $(TYPEDFIELDS)
 
 # Examples
+
 ```jldoctest
 julia> prob = SymmetricAfrprogsCSEProblem()
 SymmetricAfrprogsCSEProblem(np=4, mc=10000, n=2..16, Distributions.Beta{Float64}(α=3.0, β=3.0))
@@ -17,6 +18,10 @@ SymmetricAfrprogsCSEProblem(np=4, mc=10000, n=2..16, Distributions.Beta{Float64}
 julia> prob = SymmetricAfrprogsCSEProblem(mc = 1000, maxn = 12, distribution = Beta(3, 4))
 SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(α=3.0, β=4.0))
 ```
+
+# References
+
+* [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 @kwdef struct SymmetricAfrprogsCSEProblem <: SymmetricCSEProblem
     "Random number generator to use during data generation (default rng is seeded with 642867)"
@@ -25,18 +30,28 @@ SymmetricAfrprogsCSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     mc::Int = 10000
     "Number of players (default is 2)"
     np::Int = 2
-    "Distribution to use (must be `Beta` currently; default is `Beta(3, 3)`)"
+    "Distribution to use (default is `Beta(3, 3)`)"
     distribution::UnivariateDistribution = Beta(3, 3)
-    "Initial value for n (default is 2 and must be left as this currently)"
+    "Initial value for n (default is 2)"
     inin::Int = 2
     "Maximum value for n (default is 16)"
     maxn::Int = 16
+    "Knot refinement strategy. Can be `:highest_curvature` or `:even_spacing`. (default is `:highest_curvature`)"
+    knot_refinement_strategy::Symbol = :highest_curvature
     "Write txt and csv files with solution info"
     legacy_output::Bool = false
-    "The solver to use (default is to use the default set by NonlinearSolve.jl)"
+    "The solver to use (default is to use the default solver from NonlinearSolve.jl)"
     solver::Union{AbstractNonlinearAlgorithm,Nothing} = nothing
     "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
     solver_kwargs::NamedTuple = (;)
+    "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `inin`)"
+    solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
+    "Initial knot positions to use (must be length `inin` + 1, start with 0.0, and end with 1.0)"
+    initial_knots::Union{Vector{Float64},Nothing} = nothing
+end
+
+function Base.show(io::IO, obj::SymmetricAfrprogsCSEProblem)
+    print(io, "SymmetricAfrprogsCSEProblem(np=$(obj.np), mc=$(obj.mc), n=$(obj.inin)..$(obj.maxn), $(simplify_distribution_string(repr(obj.distribution))))")
 end
 
 
@@ -53,16 +68,6 @@ will return silently.
 julia> prob = SymmetricAfrprogsCSEProblem();
 julia> validate_cse_problem(prob)
 
-julia> prob = SymmetricAfrprogsCSEProblem(distribution = Normal());
-julia> validate_cse_problem(prob)
-ERROR: "Only Beta distributions are supported currently"
-[...]
-
-julia> prob = SymmetricAfrprogsCSEProblem(inin = 4);
-julia> validate_cse_problem(prob)
-ERROR: "Initial value of n must be 2 currently"
-[...]
-
 julia> prob = SymmetricAfrprogsCSEProblem(maxn = 1);
 julia> validate_cse_problem(prob)
 ERROR: "Initial value of n cannot be bigger than maximum value of n"
@@ -70,20 +75,37 @@ ERROR: "Initial value of n cannot be bigger than maximum value of n"
 ```
 """
 function validate_cse_problem(cse_problem::SymmetricAfrprogsCSEProblem)
-    if !(cse_problem.distribution isa Distributions.Beta)
-        throw("Only Beta distributions are supported currently")
-    end
-
     if cse_problem.np < 2
         throw("Not enough players")
     end
 
-    if cse_problem.inin != 2
-        throw("Initial value of n must be 2 currently")
-    end
-
     if cse_problem.inin > cse_problem.maxn
         throw("Initial value of n cannot be bigger than maximum value of n")
+    end
+
+    if cse_problem.knot_refinement_strategy ∉ [:highest_curvature, :even_spacing]
+        throw("`knot_refinement_strategy` must be one of `:highest_curvature` or `:even_spacing`")
+    end
+
+    if cse_problem.solver_initial_guess !== nothing
+        if length(cse_problem.solver_initial_guess) != cse_problem.inin
+            throw("Solver initial guess must have length $(cse_problem.inin) (actual length: $(length(cse_problem.solver_initial_guess)))")
+        end
+    end
+
+    if cse_problem.initial_knots !== nothing
+        if length(cse_problem.initial_knots) != cse_problem.inin + 1
+            throw("Initial knots must have length $(cse_problem.inin + 1) (actual length: $(length(cse_problem.initial_knots)))")
+        end
+        if !isapprox(cse_problem.initial_knots[1], 0.0)
+            throw("First initial knot must be 0.0")
+        end
+        if !isapprox(cse_problem.initial_knots[end], 1.0)
+            throw("Last initial knot must be 1.0")
+        end
+        if !issorted(cse_problem.initial_knots)
+            throw("Initial knots must be sorted")
+        end
     end
 end
 
@@ -112,24 +134,15 @@ $(TYPEDSIGNATURES)
 Objective function for the symmetric afrprogs case.
 """
 function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsParams)
-    # note: important to use similar here in case using autodiff they could be of type dual from ForwardDiff
-    # TODO: preallocate for performance??
+    # NOTE: important to use similar here in case using autodiff they could be of type dual from ForwardDiff instead of Float64
     da = similar(x)
     yknot = similar(x, length(x) + 1)
     alph = similar(da)
     bet = similar(da)
 
-    # beta distribution
-    # TODO: need to generalise for different distributions
-    betadist = p.dist
-    betadistparams = params(betadist)
-
     # set up the value of the constrained strategy parameters such that the
     # strategy is continuous
     # alph= constant, bet=slope, da(l)= derivative wrt l parameter
-
-    # TODO: need to generalise for different distributions?
-    const_val = beta(betadistparams...)
 
     da .= 0.0
     yknot[1] = 0.0
@@ -151,9 +164,8 @@ function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsPara
                 dbdp = (ti - p.knot[l]) / (p.knot[l+1] - p.knot[l])
                 check = false
 
-                # TODO: need to generalise for different distributions?
-                cumu1 = cdf(betadist, ti)
-                dcumu1 = (ti^(betadistparams[1] - 1)) * ((1 - ti)^(betadistparams[2] - 1)) / const_val
+                cumu1 = cdf(p.dist, ti)
+                dcumu1 = pdf(p.dist, ti)
                 cumu = cumu1^(p.np - 1)
                 dcumu = (p.np - 1.0) * dcumu1 * cumu1^(p.np - 2)
 
@@ -182,7 +194,7 @@ function objective_function_symmetric_afrprogs(fvec, x, p::SymmetricAfrprogsPara
         for m = 1:101
             ti = (m - 1.0) / 100.0
             bi = missing
-            true_bne = compute_bne(ti, betadist, p.np)
+            true_bne = compute_bne(ti, p.dist, p.np)
 
             # If the first element's result is NaN, replace it with 0.0
             if m == 1 && isnan(true_bne)
@@ -276,37 +288,61 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Compute CSE for symmetric case defined by `cse_problem`.
+Specific implementation of `compute_cse` for the afr-progs symmetric case.
+
+Call this function if you have already manually validated the problem and generated
+the data. The data must have shape `(cse_problem.mc, cse_problem.np)`.
 """
 function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64})
     @info "Computing: $(cse_problem)"
 
     # define some arrays
-    knot = Vector{Float64}(undef, cse_problem.maxn + 1)
-    oldknot = similar(knot)
-    yknot = similar(knot, length(knot) + 1)
+    knot = zeros(Float64, cse_problem.maxn + 1)
+    oldknot = zeros(Float64, cse_problem.maxn + 1)
+    yknot = zeros(Float64, cse_problem.maxn + 2)
     x = zeros(Float64, cse_problem.maxn)
-    fvec = similar(x)
-    alph = similar(x)
-    bet = similar(x)
+    fvec = zeros(Float64, cse_problem.maxn)
+    alph = zeros(Float64, cse_problem.maxn)
+    bet = zeros(Float64, cse_problem.maxn)
+
+    # initial values
+    n = cse_problem.inin
 
     # parameters initialisation
-    # TODO: depend on size on inin
-    oldknot[1] = 0.0
-    knot[1] = 0.0
-    knot[2] = 2.0 / 3.0
-    knot[3] = 1.0
-    # TODO: move initial guess to cse_problem
-    x[1] = log(0.25)
-    x[2] = log(0.25)
+    # knot
+    if cse_problem.initial_knots !== nothing
+        @debug "Using passed initial knots"
+        knot[begin:n+1] .= cse_problem.initial_knots
+    else
+        @debug "Using default initial knots"
+        if n == 2
+            knot[1] = 0.0
+            knot[2] = 2.0 / 3.0
+            knot[3] = 1.0
+        else
+            knot[begin:n+1] .= range(0, stop=1, length=n + 1)
+        end
+    end
+    # initial guess
+    if cse_problem.solver_initial_guess !== nothing && length(cse_problem.solver_initial_guess) == n
+        @debug "Using passed solver initial guess"
+        x[begin:n] .= cse_problem.solver_initial_guess
+    elseif cse_problem.solver_initial_guess !== nothing && length(cse_problem.solver_initial_guess) != n
+        @warn "Ignoring passed solver initial guess as it is the wrong length"
+    else
+        # default values
+        @debug "Using default initial guess"
+        x[begin:n] .= log(0.25)
+    end
 
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
-    n = cse_problem.inin
     solutions = Vector{SymmetricCSESolution}(undef, 0)
     previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
+        @debug "Initial guess:" x
+        @debug "Knot:" knot
 
         # create Params object for passing extra info to the objective function
         cse_solution = SymmetricCSESolution(problem=cse_problem, n=n, u=u)
@@ -321,44 +357,59 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
         previous_solution = cse_solution
 
         # store the solution for this value of n
-        # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
 
         # log the solution
         @info cse_solution
 
+        # break the loop if failed
+        if !cse_solution.success
+            @error "Exiting compute_cse due to solve failed"
+            break
+        end
+
         # update the parameters before moving to a CSE with a higher k
-        yknot[1] = 0.0
-        for l = 1:n
-            yknot[l+1] = yknot[l] + exp(sol.u[l])
-            alph[l] = yknot[l]
-            bet[l] = (yknot[l+1] - yknot[l]) / (knot[l+1] - knot[l])
-        end
-
-        diff = 0.0
-        loc = missing
-        for l = 2:n
-            oldknot[l] = knot[l]
-            aux = abs(bet[l] - bet[l-1])
-            if aux > diff
-                diff = aux
-                loc = l
-            end
-        end
-        oldknot[n+1] = 1.0
-
-        n += 2
-        if n <= cse_problem.maxn
-            knot[loc+1] = (oldknot[loc-1] + oldknot[loc] + oldknot[loc+1]) / 3.0
-            knot[loc] = (oldknot[loc-1] + 2.0 * knot[loc+1]) / 3.0
-            knot[n+1] = 1.0
-
-            for l = 1:loc-1
-                knot[loc-l+1] = (oldknot[loc-l] + 2.0 * knot[loc+2-l]) / 3.0
+        if n + 2 <= cse_problem.maxn
+            yknot[1] = 0.0
+            for l = 1:n
+                yknot[l+1] = yknot[l] + exp(sol.u[l])
+                alph[l] = yknot[l]
+                bet[l] = (yknot[l+1] - yknot[l]) / (knot[l+1] - knot[l])
             end
 
-            for l = loc+2:n
-                knot[l] = (oldknot[l-1] + 2.0 * knot[l-1]) / 3.0
+            if cse_problem.knot_refinement_strategy == :even_spacing
+                for l = 2:n
+                    oldknot[l] = knot[l]
+                end
+                oldknot[n+1] = 1.0
+
+                n += 2
+                knot[begin:n+1] .= range(0, stop=1, length=n + 1)
+            else # :highest_curvature
+                diff = 0.0
+                loc = missing
+                for l = 2:n
+                    oldknot[l] = knot[l]
+                    aux = abs(bet[l] - bet[l-1])
+                    if aux > diff
+                        diff = aux
+                        loc = l
+                    end
+                end
+                oldknot[n+1] = 1.0
+
+                n += 2
+                knot[loc+1] = (oldknot[loc-1] + oldknot[loc] + oldknot[loc+1]) / 3.0
+                knot[loc] = (oldknot[loc-1] + 2.0 * knot[loc+1]) / 3.0
+                knot[n+1] = 1.0
+
+                for l = 1:loc-1
+                    knot[loc-l+1] = (oldknot[loc-l] + 2.0 * knot[loc+2-l]) / 3.0
+                end
+
+                for l = loc+2:n
+                    knot[l] = (oldknot[l-1] + 2.0 * knot[l-1]) / 3.0
+                end
             end
 
             yknot[1] = 0.0
@@ -375,6 +426,8 @@ function compute_cse(cse_problem::SymmetricAfrprogsCSEProblem, u::Array{Float64}
                 end
                 x[ll] = log(yknot[ll+1] - yknot[ll])
             end
+        else
+            n += 2
         end
     end
 

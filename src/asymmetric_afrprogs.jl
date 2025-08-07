@@ -1,29 +1,37 @@
 
-
-# TODO: add stopping criteria tolerances; output files (data, results)
 """
 $(TYPEDEF)
 
-Define an asymmetric CSE problem.
+The asymmetric CSE problem adapted from the Fortran code released by Armantier et al. alongside their paper,
+"Approximation of Nash equilibria in Bayesian games" [armantier2008cse](@cite).
+
+This problem can have either 2 or 4 players. In the case of 4 players, players 1 and 2 must have the same distribution
+and players 3 and 4 must have the same distribution.
+
+Note regarding the solver: `cdf` does not seem to support dual numbers so you may need to specify a different option
+for `autodiff`, e.g. `autodiff=AutoFiniteDiff()`, instead of the default `ForwardDiff()`.
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
 $(TYPEDFIELDS)
+
+# References
+* [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 @kwdef struct AsymmetricAfrprogsCSEProblem <: AsymmetricCSEProblem
     "Random number generator to use during data generation (default rng is seeded with 642867)"
     rng::AbstractRNG = Random.seed!(642867)
     "Number of Monte Carlo steps (default is 10000)"
     mc::Int = 10000
-    "Number of players (must be 2 or 4 currently)"
-    np::Int = 2
-    "Distributions to use, which should be a Vector of length `np` (each distribution must be `Beta` currently)"
+    "Number of players, which must be 2 or 4 currently (default is 4)"
+    np::Int = 4
+    "Distributions to use, which should be a Vector of length 2 or 4. With 4 players, the first 2 players and second 2 players must have the same distributions respectively."
     distributions::Vector{UnivariateDistribution} = [Beta(3, 3), Beta(5, 3)]
     "Initial value for `n` (default is 16)"
     inin::Int = 16
     "Maximum value for `n` (default is 17)"
     maxn::Int = 17
-    "Knot refinement strategy. Can be `:steepest_slope` or `:highest_curvature`. (default is `:steepest_slope`)"
+    "Knot refinement strategy. Can be `:steepest_slope`, `:highest_curvature`, `:even_spacing`, or `:double_knot`. (default is `:steepest_slope`)"
     knot_refinement_strategy::Symbol = :steepest_slope
     "Write txt and csv files with solution info (default is False, most of this info is included in the solution objects that get return from `compute_cse`)"
     legacy_output::Bool = false
@@ -33,6 +41,12 @@ $(TYPEDFIELDS)
     solver_kwargs::NamedTuple = (;)
     "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `2 * inin - 1`)"
     solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
+    "Initial knot positions to use, if not provided use a default initial guess (must be length `inin + 1`)"
+    initial_knots::Union{Vector{Float64},Nothing} = nothing
+end
+
+function Base.show(io::IO, obj::AsymmetricAfrprogsCSEProblem)
+    print(io, "AsymmetricAfrprogsCSEProblem(np=$(obj.np), mc=$(obj.mc), n=$(obj.inin)..$(obj.maxn))")
 end
 
 
@@ -59,12 +73,11 @@ julia> validate_cse_problem(prob)
 ERROR: "Initial value of n cannot be bigger than maximum value of n"
 [...]
 ```
+
+# References
+* [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
-    if !all(x -> x isa Distributions.Beta, cse_problem.distributions)
-        throw("Only Beta distributions are supported currently")
-    end
-
     if length(cse_problem.distributions) != cse_problem.np
         if (length(cse_problem.distributions) == 2) && (cse_problem.np == 4)
             @info "Using $(cse_problem.distributions[1]) for bidders 1 and 2; $(cse_problem.distributions[2]) for bidders 3 and 4."
@@ -95,14 +108,24 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
         throw("Initial value of n cannot be bigger than maximum value of n")
     end
 
-    if cse_problem.knot_refinement_strategy ∉ [:steepest_slope, :highest_curvature]
-        throw("`knot_refinement_strategy` must be one of `:steepest_slope` or `:highest_curvature`")
+    if cse_problem.knot_refinement_strategy ∉ [:steepest_slope, :highest_curvature, :even_spacing, :double_knot]
+        throw("`knot_refinement_strategy` must be one of `:steepest_slope`, `:highest_curvature`, `:even_spacing`, or `:double_knot`")
     end
 
     if cse_problem.solver_initial_guess !== nothing
         expected_length = 2 * cse_problem.inin - 1
         if length(cse_problem.solver_initial_guess) != expected_length
-            throw("Solver initial guess must have length $(expected_length) (actual length: $(length(cse_problem.inin)))")
+            throw("Solver initial guess must have length $(expected_length) (actual length: $(length(cse_problem.solver_initial_guess)))")
+        end
+    end
+
+    if cse_problem.initial_knots !== nothing
+        expected_length = cse_problem.inin + 1
+        if length(cse_problem.initial_knots) != expected_length
+            throw("Initial knots must have length $(expected_length) (actual length: $(length(cse_problem.initial_knots)))")
+        end
+        if !issorted(cse_problem.initial_knots) || cse_problem.initial_knots[begin] != 0.0 || cse_problem.initial_knots[end] != 1.0
+            throw("Initial knots must be sorted and range from 0.0 to 1.0")
         end
     end
 end
@@ -130,7 +153,10 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Compute CSE for asymmetric case defined by `cse_problem`.
+Specific implementation of `compute_cse` for the afr-progs asymmetric case.
+
+Call this function if you have already manually validated the problem and generated
+the data. The data must have shape `(cse_problem.mc, cse_problem.np)`.
 """
 function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64})
     @info "Computing: $(cse_problem)"
@@ -159,14 +185,14 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         x[begin:n] .= 2.0 .+ rand(n)
         x[n+1:2*n-1] .= -2.0 .- rand(n - 1)
     end
-    @debug "initial guess:" x
 
     # define the knot array
-    tmparr = collect(range(0, stop=1, length=n + 1))
-    knot[1, begin:n+1] .= tmparr
-    knot[2, begin:n+1] .= tmparr
-    @debug "knot 1: $(knot[1, :])"
-    @debug "knot 2: $(knot[2, :])"
+    if cse_problem.initial_knots !== nothing
+        knot[1, begin:n+1] .= cse_problem.initial_knots
+    else
+        knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+    end
+    knot[2, begin:n+1] .= knot[1, begin:n+1]
 
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
@@ -174,6 +200,9 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
     previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
+        @debug "Initial guess:" x
+        @debug "Knot 1:" knot[1, :]
+        @debug "Knot 2:" knot[2, :]
 
         # create Params object for passing extra info to the objective function
         cse_solution = AsymmetricCSESolution(problem=cse_problem, n=n, u=u)
@@ -188,13 +217,19 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
         previous_solution = cse_solution
 
         # store the solution for this value of n
-        # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
 
         # log the solution
         @info cse_solution
 
-        if n + 1 <= cse_problem.maxn
+        # break the loop if failed
+        if !cse_solution.success
+            @error "Exiting compute_cse due to solve failed"
+            break
+        end
+
+        newn = (cse_problem.knot_refinement_strategy == :double_knot) ? n + 2 : n + 1
+        if newn <= cse_problem.maxn
             # update the parameters before moving to a CSE with a higher k
             yknot[1, 1] = 0.0
             yknot[2, 1] = 0.0
@@ -215,46 +250,85 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
             alph[2, n] = yknot[2, n]
             bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (knot[2, n+1] - knot[2, n])
 
-            # find interval to split for next iteration
-            split_idx = -1
-            if cse_problem.knot_refinement_strategy == :steepest_slope
-                # split interval with largest derivative (steepest slope)
-                slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
-                ~, split_idx = findmax(slopes)
-            elseif cse_problem.knot_refinement_strategy == :highest_curvature
-                # split interval with largest change in derivative (highest curvature)
-                if n > 1
-                    bet_diff1 = abs.(bet[1, 2:n] - bet[1, 1:n-1])
-                    bet_diff2 = abs.(bet[2, 2:n] - bet[2, 1:n-1])
-                    total_diffs = bet_diff1 + bet_diff2
-                    ~, idx = findmax(total_diffs)
-
-                    # between the two intervals that make the corner, pick the one with the steeper slope
-                    slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
-                    if slopes[idx] >= slopes[idx+1]
-                        split_idx = idx
-                    else
-                        split_idx = idx + 1
+            if cse_problem.knot_refinement_strategy == :double_knot
+                # Use symmetric approach: add 2 knots and use 1/3, 2/3 positioning
+                # find location with highest curvature (like symmetric)
+                diff = 0.0
+                loc = 2
+                for l = 2:n
+                    aux = abs(bet[1, l] - bet[1, l-1]) + abs(bet[2, l] - bet[2, l-1])
+                    if aux > diff
+                        diff = aux
+                        loc = l
                     end
-                else
-                    # cannot compute curvature with one interval, fallback to steepest slope
+                end
+
+                n += 2
+                oldknot .= knot
+
+                # Apply symmetric-style knot positioning
+                knot[1, loc+1] = (oldknot[1, loc-1] + oldknot[1, loc] + oldknot[1, loc+1]) / 3.0
+                knot[1, loc] = (oldknot[1, loc-1] + 2.0 * knot[1, loc+1]) / 3.0
+                knot[1, n+1] = 1.0
+
+                # Update knots before the split location
+                for l = 1:loc-1
+                    knot[1, loc-l+1] = (oldknot[1, loc-l] + 2.0 * knot[1, loc+2-l]) / 3.0
+                end
+
+                # Update knots after the split location
+                for l = loc+2:n
+                    knot[1, l] = (oldknot[1, l-1] + 2.0 * knot[1, l-1]) / 3.0
+                end
+
+                # Copy to second player (maintaining assumption they're the same)
+                knot[2, 1:n+1] .= knot[1, 1:n+1]
+            else
+                # find interval to split for next iteration
+                split_idx = -1
+                if cse_problem.knot_refinement_strategy == :steepest_slope
+                    # split interval with largest derivative (steepest slope)
                     slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
                     ~, split_idx = findmax(slopes)
+                elseif cse_problem.knot_refinement_strategy == :highest_curvature
+                    # split interval with largest change in derivative (highest curvature)
+                    if n > 1
+                        bet_diff1 = abs.(bet[1, 2:n] - bet[1, 1:n-1])
+                        bet_diff2 = abs.(bet[2, 2:n] - bet[2, 1:n-1])
+                        total_diffs = bet_diff1 + bet_diff2
+                        ~, idx = findmax(total_diffs)
+
+                        # between the two intervals that make the corner, pick the one with the steeper slope
+                        slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+                        if slopes[idx] >= slopes[idx+1]
+                            split_idx = idx
+                        else
+                            split_idx = idx + 1
+                        end
+                    else
+                        # cannot compute curvature with one interval, fallback to steepest slope
+                        slopes = abs.(bet[1, 1:n]) + abs.(bet[2, 1:n])
+                        ~, split_idx = findmax(slopes)
+                    end
+                end
+
+                n += 1
+                oldknot .= knot
+
+                if cse_problem.knot_refinement_strategy == :even_spacing
+                    @debug "Regenerating evenly spaced knots for n=$(n)"
+                    knot[1, begin:n+1] .= range(0, stop=1, length=n + 1)
+                    knot[2, begin:n+1] .= knot[1, begin:n+1]
+                else
+                    # insert new knot point by splitting the interval with the largest change
+                    @debug "Inserting new knot point after: $(split_idx)"
+                    new_knot_val = (oldknot[1, split_idx] + oldknot[1, split_idx+1]) / 2.0
+                    knot[1, split_idx+1] = new_knot_val
+                    knot[1, split_idx+2:n+1] .= oldknot[1, split_idx+1:n]
+                    # NOTE: there are assumptions elsewhere in the code about the knot points being the same for both players
+                    knot[2, 1:n+1] .= knot[1, 1:n+1]
                 end
             end
-
-            n += 1
-            oldknot .= knot
-
-            # insert new knot point by splitting the interval with the largest change
-            @debug "Inserting new knot point after: $(split_idx)"
-            new_knot_val = (oldknot[1, split_idx] + oldknot[1, split_idx+1]) / 2.0
-            knot[1, split_idx+1] = new_knot_val
-            knot[1, split_idx+2:n+1] .= oldknot[1, split_idx+1:n]
-            # NOTE: there are assumptions elsewhere in the code about the knot points being the same for both players
-            knot[2, 1:n+1] .= knot[1, 1:n+1]
-            @debug "new knot 1: $(knot[1, :])"
-            @debug "new knot 2: $(knot[2, :])"
 
             yknot[1, 1] = 0.0
             yknot[2, 1] = 0.0
@@ -276,7 +350,12 @@ function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64
 
             for l in 1:n-1  # TODO:in their code this was to n, but that is beyond 2n-1???
                 aux = (yknot[2, l+1] - yknot[2, l]) / (yknot[1, l+1] - yknot[2, l])
+                if aux == 1.0
+                    # avoiding division by zero when running with all players with the same distribution
+                    aux = 1 - 1e-15
+                end
                 x[n+l] = log(aux / (1.0 - aux))
+                #@debug "calc next x" n+l x[n+l] aux yknot[2, l+1] yknot[2, l] yknot[1, l+1]
             end
         else
             n += 1
@@ -301,21 +380,22 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
 
     # note: important to use similar here in case using autodiff they could be of type dual from ForwardDiff
     da = similar(x, length(x) + 2)
+    da .= 0
     yknot = similar(x, 2, n + 2)
+    yknot .= 0
     alph = similar(yknot)
+    alph .= 0
     bet = similar(yknot)
+    bet .= 0
 
     # distribution
     # NOTE : in the 4 player case, we assume players 1 and 2 have the same distribution and
     #        players 3 and 4 have the same distribution so we just consider player 1 vs player 3
     dist1 = p.dists[1]
-    dist1params = params(dist1)
     if p.np == 2
         dist2 = p.dists[2]
-        dist2params = params(dist2)
     else
         dist2 = p.dists[3]
-        dist2params = params(dist2)
     end
 
     # set up the value of the constrained strategy parameters such that the
@@ -342,9 +422,10 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
     alph[2, n] = yknot[2, n]
     bet[2, n] = (yknot[2, n+1] - yknot[2, n]) / (p.knot[2, n+1] - p.knot[2, n])
 
-    const1 = beta(dist1params...)
-    const2 = beta(dist2params...)
-
+    if any(isnan, yknot)
+        @error "NaNs in yknot at:" findall(isnan, yknot) x
+        throw("NaNs in yknot")
+    end
 
     for m = 1:p.mc
 
@@ -354,8 +435,6 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
 
         ti = p.u[m, 1]
         bi = missing
-        cumu1 = missing
-        dcumu1 = missing
         dbdt1 = missing
         dbdp = missing
         check = true
@@ -367,14 +446,14 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 dbdt1 = bet[1, l]
                 dbdp = (ti - p.knot[1, l]) / (p.knot[1, l+1] - p.knot[1, l])
                 check = false
-
-                cumu1 = cdf(dist1, ti)
-                dcumu1 = (ti^(dist1params[1] - 1)) * ((1 - ti)^(dist1params[2] - 1)) / const1
             end
         end
+        if bi === missing
+            @error "Failed to find interval for ti in FOC 1" ti p.knot
+            throw("Failed to find interval for ti in FOC 1")
+        end
 
-        cumu2 = missing
-        dcumu2 = missing
+        # Find the inverse bid for the other player type
         dbdt2 = missing
         check = true
         ll = 0
@@ -385,18 +464,33 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
                 invbi = (bi - alph[2, ll]) / bet[2, ll] + p.knot[2, ll]
                 dbdt2 = bet[2, ll]
                 check = false
-
-                cumu2 = cdf(dist2, invbi)
-                dcumu2 = (invbi^(dist2params[1] - 1)) * ((1 - invbi)^(dist2params[2] - 1)) / const2
             end
         end
+        if dbdt2 === missing
+            @error "Failed to find interval for bi in FOC 1" bi yknot
+            throw("Failed to find interval for bi in FOC 1")
+        end
 
-        cumu = cumu1 * cumu2^2
-        dcumu = dcumu1 * (cumu2^2) / dbdt1 + 2 * dcumu2 * cumu1 * cumu2 / dbdt2
+        # Calculate probabilities for bidder 1's FOC
+        if p.np == 2
+            # For 2 players: only need CDF of other player type at inverse bid
+            cumu = cdf(dist2, invbi)
+            dcumu = pdf(dist2, invbi) / dbdt2
+        else
+            # For 4 players: 1 same type, 2 other type
+            cumu1_own = cdf(dist1, ti)
+            dcumu1_own = pdf(dist1, ti)
+            cumu2_other = cdf(dist2, invbi)
+            dcumu2_other = pdf(dist2, invbi)
+
+            cumu = cumu1_own * cumu2_other^2
+            dcumu = dcumu1_own * cumu2_other^2 / dbdt1 + 2 * dcumu2_other * cumu1_own * cumu2_other / dbdt2
+        end
+
         da[l] = da[l] + dbdp * ((ti - bi) * dcumu - cumu)
 
         ########################################
-        # FOC for Bidder 4
+        # FOC for Bidder 2 (or 4 in 4-player case)
         ########################################
 
         if p.np == 2
@@ -405,40 +499,60 @@ function objective_function_asymmetric_afrprogs(fvec, x, p::AsymmetricFunctionPa
             ti = p.u[m, 4]
         end
         bi = missing
+        dbdt1_b2 = missing
+        dbdp_b2 = missing
         check = true
         l = 0
         while check
             l += 1
             if ti >= p.knot[2, l] && ti <= p.knot[2, l+1]
                 bi = alph[2, l] + bet[2, l] * (ti - p.knot[2, l])
-                dbdt1 = bet[2, l]
-                dbdp = (ti - p.knot[2, l]) / (p.knot[2, l+1] - p.knot[2, l])
-                dbdp = dbdp * (p.knot[1, l+1] - p.knot[2, l])
+                dbdt1_b2 = bet[2, l]
+                dbdp_b2 = (ti - p.knot[2, l]) / (p.knot[2, l+1] - p.knot[2, l])
+                dbdp_b2 = dbdp_b2 * (p.knot[1, l+1] - p.knot[2, l])
                 check = false
-
-                cumu1 = cdf(dist2, ti)
-                dcumu1 = (ti^(dist2params[1] - 1)) * ((1 - ti)^(dist2params[2] - 1)) / const2
             end
         end
+        if bi === missing
+            @error "Failed to find interval for ti in FOC 2" ti p.knot
+            throw("Failed to find interval for ti in FOC 2")
+        end
 
+        # Find the inverse bid for the other player type
         check = true
         ll = 0
         invbi = 1.0
+        dbdt2_b2 = missing
         while check && ll < n
             ll += 1
             if bi >= yknot[1, ll] && bi <= yknot[1, ll+1] && ll <= n
                 invbi = (bi - alph[1, ll]) / bet[1, ll] + p.knot[1, ll]
-                dbdt2 = bet[1, ll]
+                dbdt2_b2 = bet[1, ll]
                 check = false
-
-                cumu2 = cdf(dist1, invbi)
-                dcumu2 = (invbi^(dist1params[1] - 1)) * ((1 - invbi)^(dist1params[2] - 1)) / const1
             end
         end
+        if dbdt2_b2 === missing
+            @error "Failed to find interval for bi in FOC 2" bi yknot
+            throw("Failed to find interval for bi in FOC 2")
+        end
 
-        cumu = cumu1 * cumu2^2
-        dcumu = dcumu1 * (cumu2^2) / dbdt1 + 2 * dcumu2 * cumu1 * cumu2 / dbdt2
-        da[n+l] += dbdp * ((ti - bi) * dcumu - cumu)
+        # Calculate probabilities for bidder 2's FOC
+        if p.np == 2
+            # For 2 players: only need CDF of other player type at inverse bid
+            cumu = cdf(dist1, invbi)
+            dcumu = pdf(dist1, invbi) / dbdt2_b2
+        else
+            # For 4 players: 1 same type, 2 other type
+            cumu1_own = cdf(dist2, ti)
+            dcumu1_own = pdf(dist2, ti)
+            cumu2_other = cdf(dist1, invbi)
+            dcumu2_other = pdf(dist1, invbi)
+
+            cumu = cumu1_own * cumu2_other^2
+            dcumu = dcumu1_own * cumu2_other^2 / dbdt1_b2 + 2 * dcumu2_other * cumu1_own * cumu2_other / dbdt2_b2
+        end
+
+        da[n+l] += dbdp_b2 * ((ti - bi) * dcumu - cumu)
     end
 
     for l = 1:p.n-1

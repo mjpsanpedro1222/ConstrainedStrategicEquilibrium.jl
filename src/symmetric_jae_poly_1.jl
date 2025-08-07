@@ -1,9 +1,9 @@
 
-# TODO: add stopping criteria tolerances; output files (data, results)
 """
 $(TYPEDEF)
 
-The jae_poly_1 symmetric CSE problem from Computer_Code_CSE.
+The jae\\_poly\\_1 symmetric CSE problem from Computer\\_Code\\_CSE based on the paper by
+Armantier et al., "Approximation of Nash equilibria in Bayesian games" [armantier2008cse](@cite).
 
 Parameters can be passed in as keyword arguments or can be omitted to accept the default values.
 
@@ -12,11 +12,14 @@ $(TYPEDFIELDS)
 # Examples
 ```jldoctest
 julia> prob = SymmetricJaePoly1CSEProblem()
-SymmetricJaePoly1CSEProblem(np=4, mc=10000, n=2..16, Distributions.Beta{Float64}(α=3.0, β=3.0))
+SymmetricJaePoly1CSEProblem(np=4, mc=10000, n=1..12, Distributions.Kumaraswamy{Float64}(a=2.5, b=3.5))
 
-julia> prob = SymmetricJaePoly1CSEProblem(mc = 1000, maxn = 12, distribution = Beta(3, 4))
-SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(α=3.0, β=4.0))
+julia> prob = SymmetricJaePoly1CSEProblem(np=2, mc=1000, maxn=8, distribution=Beta(3, 4))
+SymmetricJaePoly1CSEProblem(np=2, mc=1000, n=1..8, Distributions.Beta{Float64}(α=3.0, β=4.0))
 ```
+
+# References
+* [armantier2008cse](@cite) Armantier et al. Journal of Applied Econometrics, 23 (2008)
 """
 @kwdef struct SymmetricJaePoly1CSEProblem <: SymmetricCSEProblem
     "Random number generator to use during data generation (default rng is seeded with 642867)"
@@ -25,18 +28,24 @@ SymmetricJaePoly1CSEProblem(np=4, mc=1000, n=2..12, Distributions.Beta{Float64}(
     mc::Int = 10000
     "Number of players (default is 4)"
     np::Int = 4
-    "Distribution to use (must be `Kumaraswamy` currently; default is `Kumaraswamy(2.5, 3.5)`)"
+    "Distribution to use (default is `Kumaraswamy(2.5, 3.5)`)"
     distribution::UnivariateDistribution = Kumaraswamy(2.5, 3.5)
-    "Initial value for n (default is 1 and must be left as this currently)"
+    "Initial value for n (default is 1)"
     inin::Int = 1
-    "Maximum value for n (default is 5)"
-    maxn::Int = 5
+    "Maximum value for n (default is 12)"
+    maxn::Int = 12
     "Write txt and csv files with solution info (default is false)"
     legacy_output::Bool = false
     "The solver to use (default is to use the default set by NonlinearSolve.jl)"
     solver::Union{AbstractNonlinearAlgorithm,Nothing} = nothing
     "Keyword arguments to pass to the solve command, such as abstol, reltol, maxiters, etc."
     solver_kwargs::NamedTuple = (;)
+    "Initial guess to pass to the solver, if not provided use a default initial guess (must be length `inin`)"
+    solver_initial_guess::Union{Vector{Float64},Nothing} = nothing
+end
+
+function Base.show(io::IO, obj::SymmetricJaePoly1CSEProblem)
+    print(io, "SymmetricJaePoly1CSEProblem(np=$(obj.np), mc=$(obj.mc), n=$(obj.inin)..$(obj.maxn), $(simplify_distribution_string(repr(obj.distribution))))")
 end
 
 
@@ -53,16 +62,6 @@ will return silently.
 julia> prob = SymmetricJaePoly1CSEProblem();
 julia> validate_cse_problem(prob)
 
-julia> prob = SymmetricJaePoly1CSEProblem(distribution = Normal());
-julia> validate_cse_problem(prob)
-ERROR: "Only Kumaraswamy distributions are supported currently"
-[...]
-
-julia> prob = SymmetricJaePoly1CSEProblem(inin = 4);
-julia> validate_cse_problem(prob)
-ERROR: "Initial value of n must be 1 currently"
-[...]
-
 julia> prob = SymmetricJaePoly1CSEProblem(maxn = 0);
 julia> validate_cse_problem(prob)
 ERROR: "Initial value of n cannot be bigger than maximum value of n"
@@ -70,20 +69,18 @@ ERROR: "Initial value of n cannot be bigger than maximum value of n"
 ```
 """
 function validate_cse_problem(cse_problem::SymmetricJaePoly1CSEProblem)
-    if !(cse_problem.distribution isa Distributions.Kumaraswamy)
-        throw("Only Kumaraswamy distributions are supported currently")
-    end
-
     if cse_problem.np < 2
         throw("Not enough players")
     end
 
-    if cse_problem.inin != 1
-        throw("Initial value of n must be 1 currently")
-    end
-
     if cse_problem.inin > cse_problem.maxn
         throw("Initial value of n cannot be bigger than maximum value of n")
+    end
+
+    if cse_problem.solver_initial_guess !== nothing
+        if length(cse_problem.solver_initial_guess) != cse_problem.inin
+            throw("Solver initial guess must have length $(cse_problem.inin) (actual length: $(length(cse_problem.solver_initial_guess)))")
+        end
     end
 end
 
@@ -108,7 +105,6 @@ Objective function for the symmetric jae_poly_1 case.
 """
 function objective_function_symmetric_jaepoly1(fvec, x, p::PolyParams)
     # note: important to use similar here in case using autodiff they could be of type dual from ForwardDiff
-    # TODO: preallocate for performance??
     da = similar(x)
 
     da .= 0.0
@@ -119,14 +115,11 @@ function objective_function_symmetric_jaepoly1(fvec, x, p::PolyParams)
         a += x[l] * p.knot^l
     end
 
-    # parameters of the distribution
-    distprms = params(p.dist)
-
     for m = 1:p.mc
         ti = p.u[m, 1]  # just for the first player
         if ti <= p.knot
-            cumu1 = 1.0 - (1.0 - ti^distprms[1])^distprms[2]
-            dcumu1 = distprms[1] * distprms[2] * (ti^(distprms[1] - 1.0)) * (1.0 - ti^distprms[1])^(distprms[2] - 1.0)
+            cumu1 = cdf(p.dist, ti)
+            dcumu1 = pdf(p.dist, ti)
             cumu = cumu1^(p.np - 1)
             dcumu = (p.np - 1.0) * dcumu1 * cumu1^(p.np - 2.0)
 
@@ -151,8 +144,6 @@ function objective_function_symmetric_jaepoly1(fvec, x, p::PolyParams)
 
     # if cvrg flag is set, output results
     if p.cvrg
-        # TODO: filenames should be an option
-        # TODO: output everything back as a solution instead of writing to file here?
         if p.legacy_output
             fout = open("sym-result-n-$(p.n).txt", "w")
             fcsv = open("sym-bids-private-values-n-$(p.n).csv", "w")
@@ -232,7 +223,10 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Compute CSE for "jae_poly_1" symmetric case defined by `cse_problem`.
+Specific implementation of `compute_cse` for the "jae\\_poly\\_1" symmetric case.
+
+Call this function if you have already manually validated the problem and generated
+the data. The data must have shape `(cse_problem.mc, cse_problem.np)`.
 """
 function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64})
     @info "Computing: $(cse_problem)"
@@ -242,17 +236,24 @@ function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64}
     fvec = zeros(Float64, cse_problem.maxn)
 
     # parameters initialisation
-    # TODO: move initial guess to cse_problem
-    x[1] = 0.5
     knot = 0.95
+    n = cse_problem.inin
+    if cse_problem.solver_initial_guess !== nothing
+        @debug "Using passed solver initial guess"
+        x[begin:n] .= cse_problem.solver_initial_guess
+    else
+        # default values
+        @debug "Using default initial guess"
+        x[begin:n] .= 0.5
+    end
 
     # enter a loop that calculates the CSE for different k
     @debug "Entering loop to compute CSE for n=$(cse_problem.inin)..$(cse_problem.maxn)"
-    n = cse_problem.inin
     solutions = Vector{SymmetricCSESolution}(undef, 0)
     previous_solution = missing
     while n <= cse_problem.maxn
         @debug "Loop: n = $n"
+        @debug "Initial guess:" x
 
         # create Params object for passing extra info to the objective function
         cse_solution = SymmetricCSESolution(problem=cse_problem, n=n, u=u)
@@ -267,12 +268,16 @@ function compute_cse(cse_problem::SymmetricJaePoly1CSEProblem, u::Array{Float64}
         previous_solution = cse_solution
 
         # store the solution for this value of n
-        # TODO: only push the solutions that succeeded (or make that an option)
         push!(solutions, cse_solution)
 
         # log the solution
-        # TODO: only if successful?
         @info cse_solution
+
+        # break the loop if failed
+        if !cse_solution.success
+            @error "Exiting compute_cse due to solve failed"
+            break
+        end
 
         n += 1
         if n <= cse_problem.maxn

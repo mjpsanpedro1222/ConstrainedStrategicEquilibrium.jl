@@ -1,15 +1,17 @@
-# # ASymmetric CSE example from afrprogs
+# # Uniform distribution
 #
-# This example is doing roughly the same thing as the asym.f example code from afrprogs.
+# **Note:** this example is not working
+#
+# This example is using the Uniform distribution with the asymmetric problem
+# but all players have the same distribution.
 #
 # ## Install dependencies
 #
-# Make sure the required packages are installed by running the following from
-# the root directory of this repo:
-
+# Enter the Julia REPL (`julia`) and run:
+#
 # ```julia
 # using Pkg
-# Pkg.instantiate()
+# Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")
 # ```
 
 # ## Load required modules

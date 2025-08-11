@@ -3,14 +3,13 @@
 # This is a simple example of how to run the jae\_poly\_1 symmetric CSE case from Computer\_Code\_CSE
 # coming from the work by Armantier et al. [armantier2008cse](@cite).
 #
-# ## Install dependencies
+# ## Install CSE package
 #
-# Make sure the required packages are installed by running the following from
-# the root directory of this repo:
-
+# Enter the Julia REPL (`julia`) and run:
+#
 # ```julia
 # using Pkg
-# Pkg.instantiate()
+# Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")
 # ```
 
 # ## Load required modules

@@ -1,15 +1,14 @@
 # # Symmetric CSE example
 #
-# This is a simple example of how to run the symmetric CSE case.
+# This is a simple example of how to run the asymmetric CSE case.
 #
-# ## Install dependencies
+# ## Install the Julia package
 #
-# Make sure the required packages are installed by running the following from
-# the root directory of this repo:
-
+# Enter the Julia REPL (`julia`) and run:
+#
 # ```julia
 # using Pkg
-# Pkg.instantiate()
+# Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")
 # ```
 
 # ## Load required modules

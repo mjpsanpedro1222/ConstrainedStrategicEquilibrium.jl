@@ -5,12 +5,11 @@
 #
 # ## Install dependencies
 #
-# Make sure the required packages are installed by running the following from
-# the root directory of this repo:
-
+# Enter the Julia REPL (`julia`) and run:
+#
 # ```julia
 # using Pkg
-# Pkg.instantiate()
+# Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")
 # ```
 
 # ## Load required modules
@@ -19,7 +18,6 @@ using ConstrainedStrategicEquilibrium
 using Plots
 using Distributions
 using NonlinearSolve
-using MINPACK
 
 # ## Create the CSE problem
 #

@@ -21,13 +21,13 @@ and the Fortran code released alongside that publication.
 
 ## Quick start
 
-From the source code directory run:
+Install the CSE package:
 
 ```
-julia --project -e 'using Pkg; Pkg.instantiate()'
+julia -e 'using Pkg; Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")'
 ```
 
-Then in the julia repl (enter by running `julia --project`):
+Then in the julia repl (enter by running `julia`):
 
 ```julia
 using ConstrainedStrategicEquilbrium

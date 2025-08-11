@@ -8,15 +8,11 @@ code released alongside their paper [https://doi.org/10.1002/jae.1040](https://d
 
 ## Install dependencies
 
-From this directory run:
-
 ```
 julia -e 'using Pkg; Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")'
 ```
 
 ## Run a simple case
-
-In the julia repl (enter by running `julia --project`):
 
 ```julia
 using ConstrainedStrategicEquilibrium
@@ -42,7 +38,7 @@ CSV.write("cse_result.csv", solutions[end].cse)
 
 ## Run an example
 
-Enter the Julia REPL (`julia --project`).
+Enter the Julia REPL (for example, by running `julia`).
 
 Run the example symmetric calculation (from afr-progs) using:
 
@@ -102,5 +98,4 @@ export this environment variable before running julia:
 
 ```
 export JULIA_DEBUG=ConstrainedStrategicEquilibrium
-```
 ```

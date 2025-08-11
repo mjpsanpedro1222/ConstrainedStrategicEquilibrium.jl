@@ -11,7 +11,7 @@ code released alongside their paper [https://doi.org/10.1002/jae.1040](https://d
 From this directory run:
 
 ```
-julia --project -e 'using Pkg; Pkg.instantiate()'
+julia -e 'using Pkg; Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")'
 ```
 
 ## Run a simple case
@@ -19,7 +19,7 @@ julia --project -e 'using Pkg; Pkg.instantiate()'
 In the julia repl (enter by running `julia --project`):
 
 ```julia
-using ConstrainedStrategicEquilbrium
+using ConstrainedStrategicEquilibrium
 
 # create a CSE problem with default options
 prob = SymmetricJaePoly1CSEProblem()
@@ -102,4 +102,5 @@ export this environment variable before running julia:
 
 ```
 export JULIA_DEBUG=ConstrainedStrategicEquilibrium
+```
 ```

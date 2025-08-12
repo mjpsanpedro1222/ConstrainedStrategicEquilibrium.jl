@@ -18,7 +18,6 @@ using ConstrainedStrategicEquilibrium
 using Plots
 using Distributions
 using NonlinearSolve
-using MINPACK
 
 # ## Create the CSE problem
 #

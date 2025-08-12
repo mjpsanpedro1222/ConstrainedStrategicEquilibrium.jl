@@ -4,7 +4,6 @@ using Random
 using Distributions
 using NonlinearSolve
 import NonlinearSolve.NonlinearSolveBase: AbstractNonlinearAlgorithm
-using MINPACK
 using SpecialFunctions
 using LinearAlgebra
 using QuadGK

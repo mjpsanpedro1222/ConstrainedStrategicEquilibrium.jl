@@ -11,7 +11,7 @@
 #
 # ```julia
 # using Pkg
-# Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")
+# Pkg.add(url="https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")
 # ```
 
 # ## Load required modules

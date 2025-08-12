@@ -24,7 +24,7 @@ and the Fortran code released alongside that publication.
 Install the CSE package:
 
 ```
-julia -e 'using Pkg; Pkg.add("https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")'
+julia -e 'using Pkg; Pkg.add(url="https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")'
 ```
 
 Then in the julia repl (enter by running `julia`):

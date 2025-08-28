@@ -8,6 +8,9 @@ The asymmetric CSE problem adapted from the Fortran code released by Armantier e
 This problem can have either 2 or 4 players. In the case of 4 players, players 1 and 2 must have the same distribution
 and players 3 and 4 must have the same distribution.
 
+Important: the two player version may not be working correctly and a warning will be printed if you try to run with
+two players.
+
 Note regarding the solver: `cdf` does not seem to support dual numbers so you may need to specify a different option
 for `autodiff`, e.g. `autodiff=AutoFiniteDiff()`, instead of the default `ForwardDiff()`.
 
@@ -99,6 +102,9 @@ function validate_cse_problem(cse_problem::AsymmetricAfrprogsCSEProblem)
     if (cse_problem.np != 4) && (cse_problem.np != 2)
         throw("Only 2 or 4 players are supported currently")
     end
+    if (cse_problem.np == 2)
+        @warn "The two player asymmetric case may not work as expected, it is recommended to use four players"
+    end
 
     if cse_problem.inin < 1
         throw("Initial value of n must greater than 0")
@@ -160,6 +166,10 @@ the data. The data must have shape `(cse_problem.mc, cse_problem.np)`.
 """
 function compute_cse(cse_problem::AsymmetricAfrprogsCSEProblem, u::Array{Float64})
     @info "Computing: $(cse_problem)"
+
+    if (cse_problem.np == 2)
+        @warn "The two player asymmetric case may not work as expected, it is recommended to use four players"
+    end
 
     # define some arrays
     knot = zeros(Float64, 2, cse_problem.maxn + 1)

@@ -5,6 +5,16 @@
 # asymmetric code base but both players have the same distribution so is effectively
 # symmetric.
 #
+# ## Install dependencies
+#
+# Enter the Julia REPL (`julia`) and run:
+#
+# ```julia
+# using Pkg
+# Pkg.add("ConstrainedStrategicEquilibrium")
+# Pkg.add("HyperTuning")
+# ```
+#
 # ## Load required modules
 
 using ConstrainedStrategicEquilibrium

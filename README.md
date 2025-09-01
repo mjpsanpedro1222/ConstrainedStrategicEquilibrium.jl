@@ -11,7 +11,7 @@ Additional documentation can be found [here](https://mjpsanpedro1222.github.io/C
 ## Install dependencies
 
 ```
-julia -e 'using Pkg; Pkg.add(url="https://github.com/mjpsanpedro1222/ConstrainedStrategicEquilibrium.jl")'
+julia -e 'using Pkg; Pkg.add("ConstrainedStrategicEquilibrium")'
 ```
 
 ## Run a simple case
